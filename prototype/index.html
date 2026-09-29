@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Box 介面雛形</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: 左側流程導覽 · 中間可切換「手機 / 電腦」的裝置框 · 右側對應心智圖與開發備註。單一深色主題（黑橘），刻意不做淺色版。 */
+:root {
+  --ink: #0c0a09;        /* App 底色 */
+  --panel: #171311;      /* 卡片、面板 */
+  --raise: #231d19;      /* 浮起層 */
+  --line: #332a24;       /* 分隔線 */
+  --text: #f4ede7;       /* 主要文字 */
+  --mute: #a39388;       /* 次要文字 */
+  --orange: #ff7a1a;     /* 品牌橘 */
+  --orange-deep: #c85400;
+  --on-orange: #1a0c02;
+  --good: #52c98e;
+  --warn: #f2b53a;
+  --bad: #f0604f;
+  --page: #070605;       /* 裝置外的展示背景 */
+  --f-display: "Big Shoulders Display", "Noto Sans TC", "Arial Narrow", sans-serif;
+  --f-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--page); color: var(--text); font-family: var(--f-body); font-size: 14px; line-height: 1.55; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input, select { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+svg.i { width: 1.35em; height: 1.35em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.fill { fill: currentColor; stroke: none; }
+
+/* ---------- 展示頁外框 ---------- */
+.page { padding-inline: 16px; padding-block: 18px 40px; max-width: 1560px; margin: 0 auto; }
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.logo { font-family: var(--f-display); font-weight: 900; font-size: 30px; letter-spacing: .02em; line-height: 1; }
+.logo b { color: var(--orange); }
+.brand small { color: var(--mute); font-size: 13px; }
+.seg { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.seg button { padding: 6px 14px; border-radius: 999px; color: var(--mute); font-size: 13px; font-weight: 500; }
+.seg button.on { background: var(--orange); color: var(--on-orange); font-weight: 700; }
+
+.stage-wrap { display: grid; grid-template-columns: 230px minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
+.flow { position: sticky; top: 16px; display: grid; gap: 18px; max-height: calc(100vh - 32px); overflow: auto; padding-right: 4px; scrollbar-width: thin; }
+.flow h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .14em; color: var(--mute); font-weight: 700; }
+.flow ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.flow li button { width: 100%; text-align: left; padding: 6px 10px; border-radius: 6px; color: var(--text); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.flow li button:hover { background: var(--panel); }
+.flow li button.on { background: var(--raise); color: var(--orange); }
+.flow li button .step { font-family: var(--f-mono); font-size: 10px; color: var(--mute); width: 1.6em; }
+
+.device-area { display: flex; justify-content: center; min-width: 0; }
+.device { width: 392px; height: 812px; max-width: 100%; border-radius: 46px; padding: 12px; background: linear-gradient(145deg, #2a2420, #0f0d0c); box-shadow: 0 0 0 1px #3a312b, 0 30px 80px -20px rgba(255, 122, 26, .18), 0 20px 60px rgba(0,0,0,.6); transition: width .35s ease, height .35s ease, border-radius .35s ease; }
+.device.desktop { width: 1060px; height: 700px; border-radius: 16px; padding: 10px; }
+.screen { width: 100%; height: 100%; border-radius: 36px; overflow: hidden; position: relative; background: var(--ink); }
+.device.desktop .screen { border-radius: 8px; }
+
+.notes { position: sticky; top: 16px; display: grid; gap: 16px; }
+.notes section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.notes h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .14em; color: var(--mute); font-weight: 700; }
+.notes h2 { margin: 0 0 4px; font-size: 18px; text-wrap: balance; }
+.notes p { margin: 0; color: var(--mute); font-size: 13px; }
+.notes code { font-family: var(--f-mono); font-size: 12px; color: var(--orange); word-break: break-all; }
+.map-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.map-tags span { font-size: 12px; padding: 3px 9px; border-radius: 4px; background: var(--raise); border-left: 3px solid var(--orange); }
+.map-tags span.new { border-left-color: var(--good); }
+.legend { font-size: 12px; color: var(--mute); margin-top: 8px !important; }
+
+@media (max-width: 1240px) {
+  .stage-wrap { grid-template-columns: 200px minmax(0, 1fr); }
+  .notes { grid-column: 1 / -1; position: static; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+}
+@media (max-width: 820px) {
+  .stage-wrap { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .flow { position: static; max-height: none; display: flex; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  .flow > div { display: contents; }
+  .flow h3 { display: none; }
+  .flow ul { display: flex; gap: 6px; }
+  .flow li button { white-space: nowrap; background: var(--panel); border: 1px solid var(--line); }
+  .flow li button .step { display: none; }
+  .device { width: 100%; height: min(760px, calc(100dvh - 150px)); min-height: 600px; border-radius: 30px; padding: 8px; }
+  .screen { border-radius: 24px; }
+  .device.desktop { height: 640px; }
+}
+
+/* ---------- App 本體 ---------- */
+.app { container-type: inline-size; position: relative; height: 100%; font-size: var(--afs, 15px); color: var(--text); background: var(--ink); }
+.shell { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; }
+.status { display: flex; justify-content: space-between; align-items: center; padding: 12px 26px 4px; font-size: 13px; font-weight: 700; font-family: var(--f-mono); }
+.status .dots { display: flex; gap: 5px; align-items: center; }
+.status .dots i { width: 16px; height: 9px; border: 1.5px solid var(--text); border-radius: 3px; display: inline-block; position: relative; }
+.status .dots i::after { content: ""; position: absolute; inset: 1px 4px 1px 1px; background: var(--text); border-radius: 1px; }
+.device.desktop .status { display: none; }
+.view { overflow-y: auto; overflow-x: hidden; scrollbar-width: none; position: relative; min-height: 0; }
+.view::-webkit-scrollbar { display: none; }
+
+.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: #0c0a09f2; padding: 6px 4px 16px; }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--mute); font-size: .72em; font-weight: 500; padding: 6px 0; letter-spacing: .02em; }
+.tab.on { color: var(--text); }
+.tab.on svg { color: var(--orange); }
+.rail-logo { display: none; }
+
+@container (min-width: 700px) {
+  .shell { grid-template-columns: 210px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+  .status { display: none; }
+  .tabbar { order: -1; grid-template-columns: none; grid-auto-rows: min-content; align-content: start; gap: 4px; border-top: 0; border-right: 1px solid var(--line); padding: 22px 12px; background: var(--ink); }
+  .tab { flex-direction: row; gap: 12px; font-size: .92em; padding: 10px 12px; border-radius: 8px; }
+  .tab.on { background: var(--raise); }
+  .rail-logo { display: block; font-family: var(--f-display); font-weight: 900; font-size: 1.7em; padding: 0 12px 20px; line-height: 1; }
+  .rail-logo b { color: var(--orange); }
+}
+
+/* 頁首 */
+.hd { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; background: linear-gradient(var(--ink) 55%, #0c0a0900); }
+.hd.clear { position: absolute; left: 0; right: 0; background: linear-gradient(#000000b0, #00000000); }
+.hd .logo { font-size: 1.6em; }
+.hd h1 { margin: 0; font-size: 1.35em; font-weight: 900; }
+.hd .acts { display: flex; gap: 4px; }
+.icon-btn { width: 2.3em; height: 2.3em; display: grid; place-items: center; border-radius: 50%; position: relative; }
+.icon-btn:hover { background: #ffffff14; }
+.icon-btn .badge { position: absolute; top: 3px; right: 3px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--orange); color: var(--on-orange); font-size: 10px; font-weight: 900; display: grid; place-items: center; padding: 0 4px; font-family: var(--f-mono); }
+.sub { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: var(--ink); border-bottom: 1px solid var(--line); }
+.sub h1 { margin: 0; font-size: 1.05em; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 按鈕與標籤 */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .45em; padding: .68em 1.15em; border-radius: 6px; font-weight: 700; font-size: .95em; white-space: nowrap; }
+.btn.pri { background: var(--orange); color: var(--on-orange); }
+.btn.pri:hover { background: #ff8c3a; }
+.btn.sec { background: #ffffff1f; color: var(--text); }
+.btn.sec:hover { background: #ffffff2e; }
+.btn.ghost { border: 1px solid var(--line); color: var(--text); }
+.btn.wide { width: 100%; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 16px 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; padding: .36em .95em; border-radius: 999px; border: 1px solid var(--line); color: var(--mute); font-size: .85em; font-weight: 500; }
+.chip.on { background: var(--text); border-color: var(--text); color: var(--ink); font-weight: 700; }
+.pill { display: inline-flex; align-items: center; gap: .3em; font-size: .72em; font-weight: 700; padding: .15em .55em; border-radius: 4px; background: #ffffff1a; color: var(--text); letter-spacing: .02em; }
+.pill.age { border: 1px solid var(--mute); background: none; }
+.pill.hot { background: var(--orange); color: var(--on-orange); }
+.pill.good { background: #52c98e26; color: var(--good); }
+.pill.warn { background: #f2b53a26; color: var(--warn); }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: var(--mute); font-size: .82em; }
+.meta .star { color: var(--orange); display: inline-flex; align-items: center; gap: 2px; font-weight: 700; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* 封面 */
+.cover { position: relative; overflow: hidden; border-radius: 6px; background: var(--panel); }
+.cover svg { display: block; width: 100%; height: 100%; }
+.cover .ttl { position: absolute; left: 8px; right: 8px; bottom: 7px; font-weight: 900; font-size: .9em; line-height: 1.2; text-shadow: 0 1px 8px #000; }
+.cover .en { display: block; font-family: var(--f-display); font-weight: 800; font-size: .78em; letter-spacing: .06em; color: #ffffffb0; text-transform: uppercase; }
+.cover .tagc { position: absolute; top: 6px; left: 6px; }
+.cover .gb { position: absolute; top: 6px; right: 7px; font-family: var(--f-display); font-weight: 900; font-size: .75em; color: var(--orange); letter-spacing: .04em; }
+
+/* 橫向列 */
+.blk { margin-top: 1.4em; }
+.blk-h { display: flex; align-items: baseline; justify-content: space-between; padding: 0 16px 8px; gap: 10px; }
+.blk-h h2 { margin: 0; font-size: 1.05em; font-weight: 700; text-wrap: balance; }
+.blk-h button { color: var(--mute); font-size: .8em; display: inline-flex; align-items: center; }
+.row { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 4px; scroll-snap-type: x proximity; scroll-padding-inline: 16px; scrollbar-width: none; }
+.row::-webkit-scrollbar { display: none; }
+.row > * { scroll-snap-align: start; }
+.card { flex: 0 0 44%; text-align: left; display: grid; gap: 6px; }
+.card .cover { aspect-ratio: 16 / 10; }
+.card:hover .cover { box-shadow: 0 0 0 2px var(--orange); }
+.card .progress { height: 3px; background: #ffffff2a; border-radius: 2px; overflow: hidden; }
+.card .progress i { display: block; height: 100%; background: var(--orange); }
+.card .cap { font-size: .78em; color: var(--mute); }
+@container (min-width: 700px) {
+  .card { flex-basis: 22%; }
+}
+
+/* Top 10 */
+.t10 { flex: 0 0 52%; display: flex; align-items: flex-end; text-align: left; }
+.t10 .rank { font-family: var(--f-display); font-weight: 900; font-size: 7.2em; line-height: .8; color: var(--ink); -webkit-text-stroke: 2px #6b5e55; letter-spacing: -.06em; margin-right: -.12em; z-index: 1; }
+.t10:hover .rank { -webkit-text-stroke-color: var(--orange); }
+.t10 .cover { width: 62%; aspect-ratio: 2 / 3; flex: none; }
+@container (min-width: 700px) { .t10 { flex-basis: 20%; } }
+
+/* Hero */
+.hero { position: relative; aspect-ratio: 4 / 5; max-width: 100%; }
+.hero .cover { position: absolute; inset: 0; border-radius: 0; }
+.hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(#0c0a0900 35%, #0c0a09d9 78%, var(--ink)); pointer-events: none; }
+.hero .body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 0 16px 6px; display: grid; gap: 10px; justify-items: center; text-align: center; }
+.hero .kicker { font-family: var(--f-display); font-weight: 800; letter-spacing: .24em; font-size: .78em; color: var(--orange); }
+.hero h2 { margin: 0; font-size: 2.3em; font-weight: 900; line-height: 1.05; text-wrap: balance; }
+.hero p { margin: 0; color: #e8ddd4; font-size: .88em; max-width: 34ch; }
+.hero .btns { display: flex; gap: 10px; }
+@container (min-width: 700px) {
+  .hero { aspect-ratio: auto; height: 25em; }
+  .hero .body { justify-items: start; text-align: left; padding: 0 40px 30px; right: 40%; }
+  .hero h2 { font-size: 2.8em; }
+}
+
+/* 格狀 */
+.ggrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; padding: 12px 16px 20px; }
+.ggrid .card { flex: none; }
+@container (min-width: 700px) { .ggrid { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-inline: 24px; } }
+.gname { font-weight: 700; font-size: .92em; line-height: 1.3; }
+
+/* 詳情 */
+.dhero { position: relative; aspect-ratio: 16 / 11; max-width: 100%; }
+.dhero .cover { position: absolute; inset: 0; border-radius: 0; }
+.dhero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(#0c0a0900 45%, var(--ink)); }
+.dbody { padding: 0 16px 24px; display: grid; gap: 14px; position: relative; z-index: 2; margin-top: -2.4em; }
+.dbody h1 { margin: 0; font-size: 1.9em; font-weight: 900; line-height: 1.1; }
+.dbody .en { font-family: var(--f-display); font-weight: 800; color: var(--mute); letter-spacing: .1em; text-transform: uppercase; font-size: .9em; }
+.dbody p { margin: 0; color: #ddd1c8; font-size: .92em; max-width: 60ch; }
+.acts3 { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+.acts3 button { display: grid; justify-items: center; gap: 4px; color: var(--mute); font-size: .75em; padding: 6px 0; }
+.acts3 button.on { color: var(--orange); }
+.how { margin: 0; padding-left: 1.2em; color: #ddd1c8; font-size: .9em; display: grid; gap: 4px; }
+.h3 { font-size: .98em; font-weight: 700; margin: 0; }
+.dev { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--panel); font-size: .85em; }
+.dev .av { width: 2.2em; height: 2.2em; }
+.lb { display: grid; gap: 2px; }
+.lb div { display: grid; grid-template-columns: 1.6em 2em 1fr auto; gap: 8px; align-items: center; padding: 6px 0; font-size: .88em; border-bottom: 1px solid var(--line); }
+.lb div:last-child { border-bottom: 0; }
+.lb b { font-family: var(--f-display); font-size: 1.2em; color: var(--mute); }
+.lb .me { color: var(--orange); }
+@container (min-width: 700px) {
+  .dhero { aspect-ratio: 21 / 7; }
+  .dbody { padding-inline: 40px; grid-template-columns: minmax(0, 1fr) 280px; column-gap: 32px; align-items: start; }
+  .dbody > * { grid-column: 1; }
+  .dbody > .side { grid-column: 2; grid-row: 1 / span 6; }
+}
+
+/* 頭像 */
+.av { width: 2.6em; height: 2.6em; border-radius: 50%; display: grid; place-items: center; font-weight: 900; font-size: .95em; flex: none; color: #fff; }
+
+/* 列表 */
+.list { display: grid; }
+.li { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--line); text-align: left; width: 100%; min-height: 3.4em; }
+.li:hover { background: #ffffff08; }
+.li .t { flex: 1; min-width: 0; }
+.li .t b { display: block; font-weight: 500; font-size: .95em; }
+.li .t small { display: block; color: var(--mute); font-size: .78em; }
+.li .v { color: var(--mute); font-size: .85em; text-align: right; }
+.li .ic { width: 2.2em; height: 2.2em; border-radius: 8px; background: var(--raise); display: grid; place-items: center; color: var(--orange); flex: none; }
+.li.hl { background: linear-gradient(90deg, #ff7a1a1f, #ff7a1a00); }
+.group-t { padding: 18px 16px 6px; font-size: .74em; letter-spacing: .12em; color: var(--mute); font-weight: 700; }
+.tg { width: 44px; height: 26px; border-radius: 13px; background: #4a3f38; position: relative; flex: none; transition: background .2s; }
+.tg::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.tg.on { background: var(--orange); }
+.tg.on::after { transform: translateX(18px); }
+input[type=range] { accent-color: var(--orange); width: 7.5em; }
+
+/* 個人頁 */
+.prof { padding: 14px 16px 6px; display: flex; gap: 14px; align-items: center; }
+.prof .av { width: 4.4em; height: 4.4em; font-size: 1.1em; box-shadow: 0 0 0 3px var(--ink), 0 0 0 5px var(--orange); }
+.prof h2 { margin: 0; font-size: 1.3em; font-weight: 900; }
+.lvl { display: grid; gap: 4px; margin-top: 4px; }
+.bar { height: 6px; background: #ffffff1f; border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--orange-deep), var(--orange)); }
+.walletc { margin: 10px 16px; padding: 14px 16px; border-radius: 12px; background: linear-gradient(120deg, #3a1d08, #1c120b 60%); border: 1px solid #5a3417; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.walletc .big { font-family: var(--f-display); font-weight: 900; font-size: 2.1em; line-height: 1; }
+.walletc .big small { font-size: .45em; color: var(--orange); letter-spacing: .1em; margin-left: 4px; }
+.stats3 { display: grid; grid-template-columns: repeat(3, 1fr); margin: 6px 16px 0; border: 1px solid var(--line); border-radius: 10px; }
+.stats3 div { padding: 10px 8px; text-align: center; border-right: 1px solid var(--line); }
+.stats3 div:last-child { border-right: 0; }
+.stats3 b { display: block; font-family: var(--f-display); font-size: 1.5em; font-weight: 900; line-height: 1.1; }
+.stats3 small { color: var(--mute); font-size: .74em; }
+.banner { margin: 10px 16px; padding: 12px 14px; border-radius: 10px; background: var(--raise); border: 1px dashed #6b4a2f; display: flex; gap: 10px; align-items: center; font-size: .85em; }
+.banner .t { flex: 1; }
+.banner b { color: var(--orange); }
+
+/* 商城 */
+.pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px 16px 20px; }
+@container (min-width: 700px) { .pgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-inline: 24px; } }
+.prod { background: var(--panel); border-radius: 10px; overflow: hidden; text-align: left; display: grid; border: 1px solid var(--line); }
+.prod:hover { border-color: var(--orange); }
+.prod .cover { aspect-ratio: 1; border-radius: 0; }
+.prod .pb { padding: 8px 10px 10px; display: grid; gap: 4px; }
+.prod .pn { font-size: .86em; font-weight: 700; line-height: 1.3; }
+.price { font-family: var(--f-mono); font-weight: 700; color: var(--orange); font-size: .9em; }
+.cartrow { display: grid; grid-template-columns: 3.4em 1fr auto; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.cartrow .cover { aspect-ratio: 1; }
+.qty { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 6px; }
+.qty button { width: 1.9em; height: 1.9em; }
+.qty span { min-width: 1.6em; text-align: center; font-family: var(--f-mono); font-size: .85em; }
+.sum { margin: 14px 16px; padding: 14px; border-radius: 10px; background: var(--panel); display: grid; gap: 8px; font-size: .9em; }
+.sum div { display: flex; justify-content: space-between; gap: 10px; }
+.sum .tot { font-weight: 900; font-size: 1.1em; border-top: 1px solid var(--line); padding-top: 8px; }
+
+/* 好友 */
+.searchbox { display: flex; align-items: center; gap: 8px; margin: 12px 16px; padding: 0 12px; border-radius: 8px; background: var(--raise); border: 1px solid var(--line); }
+.searchbox input { flex: 1; min-width: 0; background: none; border: 0; padding: .72em 0; outline: none; }
+.searchbox:focus-within { border-color: var(--orange); }
+.imp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 16px; }
+.imp button { display: grid; justify-items: center; gap: 6px; padding: 12px 6px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); font-size: .78em; }
+.imp button svg { color: var(--orange); }
+.fr { display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
+.fr .t { flex: 1; min-width: 0; }
+.fr .t b { display: block; font-size: .92em; }
+.fr .t small { color: var(--mute); font-size: .76em; }
+.fr .btn { padding: .45em .9em; font-size: .82em; }
+.online { width: 9px; height: 9px; border-radius: 50%; background: var(--good); display: inline-block; margin-left: 4px; }
+.qrbox { display: grid; justify-items: center; gap: 10px; padding: 20px 16px; }
+.qrbox svg { width: 180px; height: 180px; background: #fff; padding: 10px; border-radius: 12px; }
+
+/* 遊戲進行 */
+.play { position: absolute; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: radial-gradient(120% 80% at 50% 30%, #2b1606, #0c0a09 70%); z-index: 20; }
+.hud { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 8px; gap: 10px; }
+.hud .box { background: #00000080; border: 1px solid var(--line); border-radius: 8px; padding: 4px 12px; text-align: center; min-width: 5.4em; }
+.hud .box small { display: block; font-size: .64em; letter-spacing: .12em; color: var(--mute); }
+.hud .box b { font-family: var(--f-display); font-size: 1.5em; line-height: 1; }
+.arena { position: relative; margin: 6px 14px; border-radius: 14px; border: 1px solid #4a2c14; background-image: radial-gradient(#ff7a1a22 1px, transparent 1px); background-size: 22px 22px; overflow: hidden; }
+.tgt { position: absolute; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #ffd2a8, var(--orange) 45%, var(--orange-deep)); box-shadow: 0 0 24px #ff7a1a88; animation: pop 1.15s ease-in forwards; }
+.tgt::before { content: ""; position: absolute; top: -8px; left: 28px; width: 10px; height: 14px; background: var(--good); border-radius: 50% 50% 0 50%; transform: rotate(20deg); }
+.tgt.gold { background: radial-gradient(circle at 34% 30%, #fff5c9, #ffd23a 45%, #c78c00); box-shadow: 0 0 30px #ffd23aaa; }
+.tgt.hit { animation: hit .25s ease-out forwards; pointer-events: none; }
+@keyframes pop { 0% { transform: scale(0); } 15% { transform: scale(1.08); } 25% { transform: scale(1); } 80% { opacity: 1; } 100% { transform: scale(.7); opacity: 0; } }
+@keyframes hit { to { transform: scale(1.6); opacity: 0; } }
+.float { position: absolute; font-family: var(--f-display); font-weight: 900; font-size: 1.4em; color: var(--orange); pointer-events: none; animation: rise .7s ease-out forwards; }
+@keyframes rise { to { transform: translateY(-40px); opacity: 0; } }
+.playfoot { padding: 8px 16px 20px; text-align: center; color: var(--mute); font-size: .78em; }
+.overlay { position: absolute; inset: 0; background: #000000c0; display: grid; place-items: center; z-index: 30; }
+.overlay .panel { width: min(300px, 86%); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 10px; text-align: center; }
+.overlay h2 { margin: 0 0 6px; font-size: 1.3em; }
+.countdown { font-family: var(--f-display); font-weight: 900; font-size: 6em; color: var(--orange); }
+
+/* 結果 */
+.result { padding: 26px 16px 10px; text-align: center; display: grid; gap: 10px; justify-items: center; background: radial-gradient(90% 60% at 50% 0%, #3b1b05, #0c0a0900 70%); }
+.result .kicker { font-family: var(--f-display); font-weight: 800; letter-spacing: .3em; color: var(--orange); font-size: .9em; }
+.result .score { font-family: var(--f-display); font-weight: 900; font-size: 5.4em; line-height: .9; }
+.stars { display: flex; gap: 6px; color: #4a3f38; }
+.stars svg { width: 2.2em; height: 2.2em; }
+.stars .on { color: var(--orange); }
+.rewards { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.rewards span { background: var(--panel); border: 1px solid var(--line); padding: 6px 12px; border-radius: 8px; font-size: .85em; }
+.rewards b { color: var(--orange); font-family: var(--f-mono); }
+
+/* 家長控制 */
+.pinpad { padding: 30px 24px; display: grid; justify-items: center; gap: 16px; text-align: center; }
+.pinpad .shield { width: 3.6em; height: 3.6em; border-radius: 50%; background: #ff7a1a22; display: grid; place-items: center; color: var(--orange); }
+.pinpad .shield svg { width: 1.8em; height: 1.8em; }
+.pindots { display: flex; gap: 14px; }
+.pindots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--mute); }
+.pindots i.on { background: var(--orange); border-color: var(--orange); }
+.pindots.shake { animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+.keys { display: grid; grid-template-columns: repeat(3, 4.2em); gap: 12px; }
+.keys button { height: 4.2em; border-radius: 50%; background: var(--raise); font-size: 1.2em; font-family: var(--f-mono); font-weight: 700; }
+.keys button:active { background: var(--orange); color: var(--on-orange); }
+.chart { margin: 4px 16px 6px; padding: 12px; background: var(--panel); border-radius: 10px; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .lg { display: flex; gap: 14px; font-size: .74em; color: var(--mute); margin-top: 4px; flex-wrap: wrap; }
+.chart .lg i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+
+/* 登入 */
+.login { position: absolute; inset: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; background: var(--ink); z-index: 25; }
+.login .wall { position: relative; overflow: hidden; }
+.login .wall .mosaic { position: absolute; inset: -20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; transform: rotate(-8deg) scale(1.2); opacity: .55; }
+.login .wall .mosaic .cover { aspect-ratio: 2 / 3; }
+.login .wall::after { content: ""; position: absolute; inset: 0; background: linear-gradient(#0c0a0966, var(--ink) 92%); }
+.login .wall .mark { position: absolute; z-index: 2; left: 0; right: 0; bottom: 8%; text-align: center; display: grid; gap: 6px; justify-items: center; }
+.login .wall .mark .logo { font-size: 3.6em; }
+.login .wall .mark p { margin: 0; color: #e8ddd4; font-size: .92em; }
+.login .form { padding: 8px 22px 26px; display: grid; gap: 10px; }
+.login .or { display: flex; align-items: center; gap: 10px; color: var(--mute); font-size: .76em; }
+.login .or::before, .login .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.login .fine { color: var(--mute); font-size: .72em; text-align: center; margin: 4px 0 0; }
+@container (min-width: 700px) {
+  .login { grid-template-rows: none; grid-template-columns: minmax(0, 1.3fr) minmax(320px, 1fr); }
+  .login .form { align-content: center; padding: 40px 48px; }
+  .login .wall::after { background: linear-gradient(90deg, #0c0a0933, var(--ink) 98%); }
+}
+
+/* Sheet / Toast */
+.sheet-bg { position: absolute; inset: 0; z-index: 40; background: #000000a8; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { width: 100%; max-width: 520px; background: var(--panel); border-radius: 18px 18px 0 0; padding: 10px 20px 24px; display: grid; gap: 12px; border-top: 1px solid var(--line); animation: up .22s ease-out; }
+.sheet::before { content: ""; justify-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--line); }
+.sheet h2 { margin: 0; font-size: 1.15em; }
+.sheet p { margin: 0; color: var(--mute); font-size: .88em; }
+@keyframes up { from { transform: translateY(40px); opacity: 0; } }
+.toast { position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%); z-index: 50; background: var(--text); color: var(--ink); padding: 9px 16px; border-radius: 8px; font-size: .85em; font-weight: 700; max-width: 88%; text-align: center; box-shadow: 0 10px 30px #000a; animation: up .2s ease-out; }
+
+.empty { padding: 40px 24px; text-align: center; color: var(--mute); display: grid; gap: 12px; justify-items: center; }
+.pad { padding: 0 16px; }
+.muted { color: var(--mute); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <span class="logo">GAME<b>BOX</b></span>
+      <small>介面雛形 v0.1 · 6 歲以上 · iOS / Android / 電腦</small>
+    </div>
+    <div class="seg" role="group" aria-label="裝置預覽">
+      <button type="button" id="dev-phone" class="on" data-device="phone">手機</button>
+      <button type="button" id="dev-desktop" data-device="desktop">電腦 / 平板</button>
+    </div>
+  </header>
+
+  <div class="stage-wrap">
+    <nav class="flow" id="flow" aria-label="畫面導覽"></nav>
+    <div class="device-area">
+      <div class="device" id="device">
+        <div class="screen"><div class="app" id="app"></div></div>
+      </div>
+    </div>
+    <aside class="notes" id="notes"></aside>
+  </div>
+</div>
+
+<script>
+(() => {
+/* ================= 資料 ================= */
+const GAMES = [
+  { id: 'g1', t: '星際跳跳', en: 'Star Hopper', cat: '動作', age: '6+', dev: '小安', team: 'A 組', mins: 3, r: 4.8, plays: '12.4 萬', h: 24, p: 'orbs',
+    d: '在一顆顆小星球之間跳躍，收集星塵點亮銀河。按得越準、跳得越遠，每 5 關會遇到一位太空朋友。',
+    how: ['點一下螢幕起跳，長按跳得更高', '落在星球中心可以拿到雙倍星塵', '碰到隕石會失去一顆愛心'], tags: ['反應', '節奏'] },
+  { id: 'g2', t: '數字泡泡', en: 'Number Bubbles', cat: '學習', age: '6+', dev: 'Kiki', team: 'B 組', mins: 4, r: 4.7, plays: '9.8 萬', h: 196, p: 'dots',
+    d: '泡泡裡藏著算式，戳破答案正確的泡泡就能得分。從 10 以內加減法開始，一路解鎖到九九乘法。',
+    how: ['看上方題目，找出答案正確的泡泡', '連續答對 5 題會觸發彩虹泡泡', '答錯不扣分，會顯示正確算法'], tags: ['數學', '益智'] },
+  { id: 'g3', t: '記憶翻牌', en: 'Memory Flip', cat: '益智', age: '6+', dev: '阿哲', team: 'C 組', mins: 3, r: 4.6, plays: '8.1 萬', h: 276, p: 'grid',
+    d: '翻開兩張相同的動物卡就能配對。卡片越來越多，考驗你的記憶力和專注力。',
+    how: ['一次翻開兩張卡片', '相同就配對成功並留在桌面', '用最少步數完成會拿到三顆星'], tags: ['記憶', '益智'] },
+  { id: 'g4', t: '迷宮小探險', en: 'Maze Scout', cat: '益智', age: '6+', dev: '小安', team: 'A 組', mins: 5, r: 4.5, plays: '6.3 萬', h: 142, p: 'maze',
+    d: '帶著小狐狸穿過森林迷宮，沿路撿鑰匙開寶箱。每一關的地圖都會隨機產生。',
+    how: ['滑動螢幕控制方向', '撿到鑰匙才能打開出口', '地圖右上角可以看提示（每關一次）'], tags: ['空間', '探索'] },
+  { id: 'g5', t: '節奏小鼓手', en: 'Beat Drummer', cat: '節奏', age: '6+', dev: 'Momo', team: 'D 組', mins: 3, r: 4.8, plays: '11.2 萬', h: 330, p: 'rings',
+    d: '跟著音樂在鼓圈落下時敲擊，打出完美連擊。內建 12 首原創兒歌，家長可以一起合奏。',
+    how: ['光圈縮到鼓面時點擊', '連續 Perfect 會累積火焰連擊', '雙人模式：一台裝置左右兩邊各一人'], tags: ['音樂', '節奏', '反應'] },
+  { id: 'g6', t: '水果切切樂', en: 'Fruit Slice', cat: '動作', age: '8+', dev: '阿哲', team: 'C 組', mins: 2, r: 4.4, plays: '7.7 萬', h: 92, p: 'stripes',
+    d: '水果從下方拋上來，用手指一劃切開它們，但要小心躲開炸彈。',
+    how: ['用手指劃過水果', '一次切到三個以上有連擊加分', '切到炸彈遊戲結束'], tags: ['反應'] },
+  { id: 'g7', t: '太空打磚塊', en: 'Space Bricks', cat: '動作', age: '8+', dev: 'Kiki', team: 'B 組', mins: 4, r: 4.5, plays: '5.9 萬', h: 222, p: 'bricks',
+    d: '移動太空船反彈能量球，擊碎外星磚牆。部分磚塊會掉落強化道具。',
+    how: ['左右拖曳控制太空船', '接住掉落的道具可以變長或多球', '清空磚牆進入下一關'], tags: ['反應', '物理'] },
+  { id: 'g8', t: '顏色配對', en: 'Color Match', cat: '學習', age: '6+', dev: 'Momo', team: 'D 組', mins: 2, r: 4.3, plays: '4.2 萬', h: 48, p: 'dots',
+    d: '把相同顏色的小怪獸送回家。學習顏色名稱與混色原理，有中英雙語語音。',
+    how: ['拖曳怪獸到同色的房子', '混色關卡：紅＋黃會變成什麼？', '可以在設定中切換語音語言'], tags: ['認知', '語言'] },
+  { id: 'g9', t: '拼圖城堡', en: 'Puzzle Castle', cat: '益智', age: '6+', dev: '小安', team: 'A 組', mins: 6, r: 4.6, plays: '5.1 萬', h: 8, p: 'grid',
+    d: '完成拼圖來蓋出你的城堡。每完成一幅，城堡就多一座塔。',
+    how: ['拖曳拼圖塊到正確位置', '雙擊拼圖塊可以旋轉', '完成後可以裝飾自己的城堡'], tags: ['空間', '益智'] },
+  { id: 'g10', t: '貪吃小蛇', en: 'Snack Snake', cat: '休閒', age: '6+', dev: 'Kiki', team: 'B 組', mins: 3, r: 4.2, plays: '6.8 萬', h: 160, p: 'zig',
+    d: '經典貪吃蛇的溫和版本：撞牆不會輸，只會繞回來。吃到點心會變長，看看能長到多長。',
+    how: ['滑動改變方向', '金色點心讓你暫時加速', '碰到自己的尾巴會縮短一半'], tags: ['休閒', '反應'] },
+  { id: 'g11', t: '點點橘子', en: 'Tap Tangerine', cat: '休閒', age: '6+', dev: '主平台', team: '示範', mins: 1, r: 4.5, plays: '3.0 萬', h: 28, p: 'orbs',
+    d: '15 秒內點掉畫面上冒出來的橘子，金橘子分數加三倍。這是主平台用來測試遊戲容器的示範遊戲。',
+    how: ['點擊出現的橘子得 10 分', '金色橘子得 30 分', '橘子會在一秒後消失'], tags: ['反應', '休閒'] },
+];
+const G = Object.fromEntries(GAMES.map(g => [g.id, g]));
+const CATS = ['全部', '動作', '益智', '學習', '節奏', '休閒'];
+
+const PRODUCTS = [
+  { id: 'p1', n: '太空頭盔造型', g: 'g1', type: '造型', price: 350, cur: 'G', h: 24, p: 'orbs', d: '星際跳跳專用角色造型，跳躍時會留下星光尾巴。', hot: true },
+  { id: 'p2', n: 'G 幣 500', type: 'G幣', price: 90, cur: 'NT$', h: 34, p: 'rings', d: '平台通用貨幣，可在所有遊戲中購買道具與造型。' },
+  { id: 'p3', n: 'G 幣 1,200（加贈 100）', type: 'G幣', price: 190, cur: 'NT$', h: 38, p: 'rings', d: '最划算的儲值方案，另外加贈 100 G。', hot: true },
+  { id: 'p4', n: '提示卡 ×5', type: '道具', price: 120, cur: 'G', h: 196, p: 'dots', d: '在益智類遊戲中顯示一次提示。可用於數字泡泡、記憶翻牌、迷宮小探險。' },
+  { id: 'p5', n: '頭像框「橘光」', type: '造型', price: 480, cur: 'G', h: 18, p: 'rings', d: '限定頭像框，好友列表和排行榜都會看到。', hot: true },
+  { id: 'p6', n: '復活愛心 ×3', type: '道具', price: 90, cur: 'G', h: 350, p: 'orbs', d: '遊戲失敗時可以原地復活一次。' },
+  { id: 'p7', n: '週末雙倍經驗券', type: '票券', price: 200, cur: 'G', h: 262, p: 'stripes', d: '週六、週日遊玩任何遊戲都能獲得雙倍經驗值。' },
+  { id: 'p8', n: '霓虹鼓棒', g: 'g5', type: '造型', price: 260, cur: 'G', h: 316, p: 'rings', d: '節奏小鼓手專用鼓棒，敲擊時會發出霓虹光。' },
+];
+const P = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
+const STORE_CATS = ['熱門與推薦', '造型', '道具', 'G幣', '票券'];
+
+const PEOPLE = {
+  bear: { n: '小熊', lv: 8, c: '#b8612b', on: true }, abu: { n: '阿布', lv: 5, c: '#3c7fa8' },
+  mimi: { n: '米米', lv: 6, c: '#9b4fb0' }, dodo: { n: '豆豆', lv: 3, c: '#3f9a6a', on: true },
+  an: { n: '小安', lv: 12, c: '#c24e3a', on: true }, kiki: { n: 'Kiki', lv: 10, c: '#566cc9' },
+  yo: { n: '柚子', lv: 7, c: '#b38a1c' },
+};
+
+const SETTINGS = [
+  { key: 'display', t: '介面與顯示', icon: 'display', sub: '語系、主題、字體大小', items: [
+    { t: '語系選擇', type: 'select', opts: ['繁體中文', 'English', '日本語'] },
+    { t: '主題模式', type: 'select', opts: ['深色', '淺色', '跟隨系統'] },
+    { t: '字體大小', type: 'font' } ] },
+  { key: 'sound', t: '聲音與音效', icon: 'sound', sub: '背景音樂、系統音效', items: [
+    { t: '背景音樂', type: 'range', v: 70 },
+    { t: '系統音效', type: 'range', v: 50 },
+    { t: '震動回饋', type: 'toggle', v: true } ] },
+  { key: 'personal', t: '個人化設定與偏好', icon: 'sliders', sub: '通知、預設頁面、自動播放', items: [
+    { t: '通知偏好', type: 'select', opts: ['全部通知', '僅好友與活動', '關閉'] },
+    { t: '預設頁面', type: 'select', opts: ['Home', 'Library', 'Profile'] },
+    { t: '自動播放預告', type: 'toggle', v: true, s: '在 Home 首圖自動播放遊戲預告' } ] },
+  { key: 'privacy', t: '好友隱私設定', icon: 'users', sub: '加好友、在線狀態、黑名單', items: [
+    { t: '加好友權限', type: 'select', opts: ['需家長核准', '所有人', '好友的好友', '關閉'] },
+    { t: '名片搜尋', type: 'toggle', v: false, s: '允許別人用用戶 ID 搜尋到我' },
+    { t: '在線狀態', type: 'toggle', v: true, s: '讓好友看到我正在線上' },
+    { t: '遊戲動態', type: 'select', opts: ['僅好友', '公開', '隱藏'] },
+    { t: '黑名單管理', type: 'link', v: '2 人' },
+    { t: '訊息過濾', type: 'select', opts: ['嚴格（建議兒童）', '標準', '關閉'] } ] },
+  { key: 'pay', t: '金流與支付設定', icon: 'wallet', sub: '付款方式、限額、發票、退款', items: [
+    { t: '預設付款方式', type: 'select', opts: ['儲值餘額', '信用卡 •••• 4821', '行動支付'] },
+    { t: '快速支付', type: 'toggle', v: false, s: '小額購買免輸入交易密碼' },
+    { t: '交易密碼', type: 'link', v: '已設定' },
+    { t: '生物辨識', type: 'toggle', v: true, s: 'Face ID / 指紋確認付款' },
+    { t: '消費限額', type: 'select', opts: ['每月 NT$300', '每月 NT$1,000', '不限制'] },
+    { t: '載具與發票', type: 'link', v: '手機條碼' },
+    { t: '退款申請', type: 'link', v: '' } ] },
+];
+
+/* ================= 狀態 ================= */
+const roots = { home: 'home', library: 'library', profile: 'profile', settings: 'settings' };
+const S = {
+  user: null, tab: 'home', device: 'phone',
+  stacks: { home: [{ s: 'home' }], library: [{ s: 'library' }], profile: [{ s: 'profile' }], settings: [{ s: 'settings' }] },
+  fav: new Set(['g2', 'g5']), best: { g11: 160 }, recent: ['g2', 'g5', 'g1'],
+  cat: '全部', sort: '熱門', storeCat: '熱門與推薦', storeSort: '熱門', rankTab: '本週', invTab: '背包', friendTab: '收到的',
+  q: '', cart: [{ id: 'p5', q: 1 }], owned: ['p4', 'p6'], orders: [
+    { n: '提示卡 ×5', d: '09/21', v: '120 G', st: '完成' }, { n: '復活愛心 ×3', d: '09/14', v: '90 G', st: '完成' }, { n: 'G 幣 500', d: '09/02', v: 'NT$90', st: '完成' } ],
+  coins: 1280, set: {}, afs: 15, pin: '', pinOk: false,
+  parental: { mins: 60, age: '6+', buy: true, friend: true, chat: '預設片語', night: true },
+  invites: { in: ['mimi', 'dodo'], out: ['yo'] }, added: new Set(),
+  sheet: null, toast: null,
+};
+function setv(k, i, item) { const key = k + i; if (!(key in S.set)) S.set[key] = item.type === 'select' ? 0 : item.v; return S.set[key]; }
+
+/* ================= 小工具 ================= */
+const PATHS = {
+  home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  lib: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  chev: '<path d="M9 5l7 7-7 7"/>',
+  play: '<path d="M7 4.5v15l12.5-7.5z"/>',
+  cart: '<path d="M3 4h2l2.4 11h10.8L21 7.5H6.2"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17.5" cy="19.5" r="1.4"/>',
+  bag: '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
+  bell: '<path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>',
+  star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.2"/>',
+  pause: '<path d="M8.5 5v14M15.5 5v14"/>',
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8.2-8 9-4.5-.8-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  wallet: '<rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M3 10h18M16 15h2"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.5 2.4 3.5 5.2"/>',
+  userplus: '<circle cx="10" cy="8" r="4"/><path d="M3 21c0-4 3.5-6 7-6 1.6 0 3 .4 4.2 1.1M19 14v6M16 17h6"/>',
+  qr: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/>',
+  book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 21h7M10 17h4v4h-4z"/>',
+  up: '<path d="M4 16l6-6 4 4 6-6M15 8h5v5"/>', down: '<path d="M4 8l6 6 4-4 6 6M15 16h5v-5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  display: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  sound: '<path d="M4 9.5h4l5-4v13l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
+  sliders: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
+  receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+  ticket: '<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M13 6v12" stroke-dasharray="2 2"/>',
+  logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/>',
+  history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+  share: '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>',
+  contacts: '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17.5c.8-2 2.5-3 4.5-3s3.7 1 4.5 3"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/>',
+  mask: '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10.5" r="1"/><circle cx="15" cy="10.5" r="1"/><path d="M8.5 15c1 1 2.2 1.5 3.5 1.5s2.5-.5 3.5-1.5"/>',
+};
+const FILLED = new Set(['play', 'star']);
+const ic = (n, cls = '') => `<svg class="i ${FILLED.has(n) ? 'fill' : ''} ${cls}" viewBox="0 0 24 24" aria-hidden="true">${PATHS[n] || ''}</svg>`;
+
+let uid = 0;
+function rng(seed) { let s = 0; for (const ch of seed) s = (s * 31 + ch.charCodeAt(0)) >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function art(h, p, seed) {
+  const id = 'a' + (uid++), R = rng(seed + p);
+  const c1 = `hsl(${h} 62% 14%)`, c2 = `hsl(${(h + 18) % 360} 80% 34%)`, c3 = `hsl(${(h + 330) % 360} 95% 62%)`, c4 = `hsl(${(h + 40) % 360} 90% 72%)`;
+  let s = '';
+  if (p === 'orbs') for (let i = 0; i < 7; i++) s += `<circle cx="${R() * 160}" cy="${R() * 100}" r="${6 + R() * 22}" fill="${[c3, c4, '#ff7a1a'][i % 3]}" opacity="${.35 + R() * .5}"/>`;
+  if (p === 'dots') for (let y = 8; y < 100; y += 14) for (let x = 8; x < 160; x += 14) { const r = R(); if (r > .45) s += `<circle cx="${x + R() * 4}" cy="${y}" r="${2 + r * 5}" fill="${r > .85 ? c4 : c3}" opacity="${.3 + r * .6}"/>`; }
+  if (p === 'grid') for (let y = 6; y < 100; y += 20) for (let x = 6; x < 160; x += 20) { const r = R(); s += `<rect x="${x}" y="${y}" width="16" height="16" rx="3" fill="${r > .75 ? c4 : r > .4 ? c3 : c2}" opacity="${r > .4 ? .8 : .45}"/>`; }
+  if (p === 'rings') { const cx = 40 + R() * 80, cy = 30 + R() * 40; for (let i = 7; i > 0; i--) s += `<circle cx="${cx}" cy="${cy}" r="${i * 13}" fill="none" stroke="${i % 2 ? c3 : c4}" stroke-width="${3 + (i % 3)}" opacity="${.2 + i * .08}"/>`; }
+  if (p === 'stripes') for (let i = -4; i < 14; i++) s += `<rect x="${i * 16}" y="-40" width="${6 + R() * 6}" height="200" fill="${i % 3 ? c3 : c4}" opacity="${.3 + R() * .5}" transform="rotate(28 80 50)"/>`;
+  if (p === 'bricks') for (let y = 6; y < 70; y += 10) for (let x = (y / 10) % 2 ? 0 : -12; x < 160; x += 24) { const r = R(); if (r > .2) s += `<rect x="${x + 1}" y="${y}" width="22" height="8" rx="1.5" fill="${r > .7 ? c4 : c3}" opacity="${.45 + r * .5}"/>`; }
+  if (p === 'bricks') s += `<circle cx="${60 + R() * 40}" cy="84" r="4" fill="#fff"/><rect x="58" y="92" width="44" height="4" rx="2" fill="${c4}"/>`;
+  if (p === 'maze') { for (let i = 0; i < 26; i++) { const x = Math.floor(R() * 8) * 20 + 10, y = Math.floor(R() * 5) * 20 + 10, v = R() > .5; s += `<line x1="${x}" y1="${y}" x2="${v ? x : x + 20}" y2="${v ? y + 20 : y}" stroke="${c3}" stroke-width="3.5" stroke-linecap="round" opacity=".8"/>`; } s += `<circle cx="130" cy="70" r="6" fill="#ff7a1a"/>`; }
+  if (p === 'zig') for (let k = 0; k < 4; k++) { let d = `M-5 ${15 + k * 24}`; for (let x = 0; x <= 170; x += 17) d += ` L${x} ${15 + k * 24 + (x / 17 % 2 ? -8 : 8)}`; s += `<path d="${d}" fill="none" stroke="${k % 2 ? c4 : c3}" stroke-width="4" stroke-linejoin="round" opacity=".7"/>`; }
+  return `<svg viewBox="0 0 160 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c2}"/><stop offset="1" stop-color="${c1}"/></linearGradient></defs><rect width="160" height="100" fill="url(#${id})"/>${s}</svg>`;
+}
+const cover = (g, o = {}) => `<div class="cover">${art(g.h, g.p, g.id)}${o.title !== false ? `<div class="ttl">${o.en !== false ? `<span class="en">${g.en}</span>` : ''}${g.t}</div>` : ''}${o.badge ? `<span class="gb">GB</span>` : ''}${o.tag || ''}</div>`;
+const pcover = p => `<div class="cover">${art(p.h, p.p, p.id)}${p.hot ? '<span class="tagc"><span class="pill hot">熱門</span></span>' : ''}</div>`;
+const av = (k, size = '') => { const u = PEOPLE[k] || { n: S.user?.name || '我', c: '#c85400' }; return `<span class="av" style="background:${u.c};${size}">${u.n.slice(0, 1)}</span>`; };
+const price = p => p.cur === 'G' ? `${p.price.toLocaleString()} G` : `NT$${p.price}`;
+const similar = g => GAMES.filter(x => x.id !== g.id).map(x => ({ x, s: (x.cat === g.cat ? 2 : 0) + x.tags.filter(t => g.tags.includes(t)).length })).sort((a, b) => b.s - a.s || b.x.r - a.x.r).slice(0, 6).map(o => o.x);
+const allowed = g => parseInt(g.age) <= parseInt(S.parental.age);
+
+/* ================= 導覽 ================= */
+const cur = () => S.stacks[S.tab][S.stacks[S.tab].length - 1];
+function go(s, p = {}) { S.stacks[S.tab].push({ s, ...p }); render(true); }
+function replace(s, p = {}) { const st = S.stacks[S.tab]; st[st.length - 1] = { s, ...p }; render(true); }
+function back() { const st = S.stacks[S.tab]; if (st.length > 1) st.pop(); render(true); }
+function tab(t) { if (S.tab === t) S.stacks[t] = [{ s: roots[t] }]; S.tab = t; render(true); }
+function toast(msg) { S.toast = msg; paintOverlays(); clearTimeout(toast.t); toast.t = setTimeout(() => { S.toast = null; paintOverlays(); }, 2200); }
+function sheet(html) { S.sheet = html; paintOverlays(); }
+function needAccount(what) {
+  if (!S.user?.guest) return false;
+  sheet(`<h2>註冊帳號即可${what}</h2><p>訪客模式可以免費玩所有遊戲，但進度只存在這台裝置。註冊後可以${what}、同步進度，並由家長管理。</p>
+    <button class="btn pri wide" data-act="upgrade">建立帳號（需家長 Email 驗證）</button><button class="btn sec wide" data-act="closeSheet">先不要</button>`);
+  return true;
+}
+
+/* ================= 畫面 ================= */
+const subHd = (title, acts = '') => `<div class="sub"><button class="icon-btn" data-act="back" aria-label="返回">${ic('back')}</button><h1>${title}</h1>${acts}</div>`;
+const cartBtn = () => `<button class="icon-btn" data-go="cart" aria-label="購物車">${ic('cart')}${S.cart.length ? `<span class="badge">${S.cart.reduce((a, c) => a + c.q, 0)}</span>` : ''}</button>`;
+const gcard = (g, cap = '') => `<button class="card" data-go="detail" data-id="${g.id}">${cover(g)}${cap}</button>`;
+
+const SCREENS = {
+  home() {
+    const f = G.g5;
+    const cont = S.recent.map(id => G[id]);
+    const top = [...GAMES].filter(g => g.id !== 'g11').sort((a, b) => parseFloat(b.plays) - parseFloat(a.plays)).slice(0, 10);
+    const rec = similar(G[S.recent[0]]).filter(allowed);
+    return `
+    <div class="hd clear"><span class="logo">GAME<b>BOX</b></span><div class="acts">
+      <button class="icon-btn" data-go="search" aria-label="搜尋">${ic('search')}</button>
+      <button class="icon-btn" data-go="store" aria-label="商城">${ic('bag')}</button>
+      <button class="icon-btn" data-act="notif" aria-label="通知">${ic('bell')}<span class="badge">2</span></button></div></div>
+    <div class="hero">${cover(f, { title: false })}
+      <div class="body"><span class="kicker">本週主打 · 新曲上架</span><h2>${f.t}</h2>
+        <div class="meta"><span class="pill age">${f.age}</span><span>${f.cat}</span><span>·</span><span>約 ${f.mins} 分鐘</span><span class="star">${ic('star')}${f.r}</span></div>
+        <p>${f.d.split('。')[0]}。</p>
+        <div class="btns"><button class="btn pri" data-go="play" data-id="${f.id}">${ic('play')}開始玩</button><button class="btn sec" data-go="detail" data-id="${f.id}">${ic('info')}詳細資訊</button></div></div></div>
+    <div class="blk"><div class="blk-h"><h2>繼續遊玩${S.user?.guest ? '' : `，${S.user?.name || ''}`}</h2></div>
+      <div class="row">${cont.map((g, i) => `<button class="card" data-go="detail" data-id="${g.id}">${cover(g)}<div class="progress"><i style="width:${[72, 40, 18][i]}%"></i></div><span class="cap">第 ${[7, 4, 2][i]} 關 · 上次 ${['今天', '昨天', '3 天前'][i]}</span></button>`).join('')}</div></div>
+    <div class="blk"><div class="blk-h"><h2>熱門遊戲排行 Top 10</h2><button data-go="ranking">全部${ic('chev')}</button></div>
+      <div class="row">${top.map((g, i) => `<button class="t10" data-go="detail" data-id="${g.id}" aria-label="第 ${i + 1} 名 ${g.t}"><span class="rank">${i + 1}</span>${cover(g, { en: false })}</button>`).join('')}</div></div>
+    <div class="blk"><div class="blk-h"><h2>因為你玩了「${G[S.recent[0]].t}」</h2></div><div class="row">${rec.map(g => gcard(g)).join('')}</div></div>
+    <div class="blk"><div class="blk-h"><h2>商城精選</h2><button data-go="store">逛商城${ic('chev')}</button></div>
+      <div class="row">${PRODUCTS.filter(p => p.hot).map(p => `<button class="card" data-go="product" data-id="${p.id}">${pcover(p)}<span class="gname">${p.n}</span><span class="price">${price(p)}</span></button>`).join('')}</div></div>
+    <div class="blk" style="padding-bottom:24px"><div class="blk-h"><h2>好友正在玩</h2><button data-go="friends">加好友${ic('chev')}</button></div>
+      ${[['an', 'g4', '第 12 關'], ['bear', 'g1', '最高分 2,340'], ['dodo', 'g8', '剛剛開始']].map(([k, gid, m]) => `<button class="fr" style="width:100%;text-align:left" data-go="detail" data-id="${gid}">${av(k)}<span class="t"><b>${PEOPLE[k].n}<span class="online"></span></b><small>正在玩「${G[gid].t}」· ${m}</small></span><span class="btn ghost">一起玩</span></button>`).join('')}</div>`;
+  },
+
+  library() {
+    let list = GAMES.filter(g => (S.cat === '全部' || g.cat === S.cat));
+    if (S.sort === '評分') list = [...list].sort((a, b) => b.r - a.r);
+    if (S.sort === '收藏') list = list.filter(g => S.fav.has(g.id));
+    if (S.sort === '熱門') list = [...list].sort((a, b) => parseFloat(b.plays) - parseFloat(a.plays));
+    const locked = list.filter(g => !allowed(g)).length;
+    return `
+    <div class="hd"><h1>遊戲庫</h1><div class="acts"><button class="icon-btn" data-go="search" aria-label="搜尋">${ic('search')}</button>${cartBtn()}</div></div>
+    <div class="chips">${CATS.map(c => `<button class="chip ${S.cat === c ? 'on' : ''}" data-act="cat" data-v="${c}">${c}</button>`).join('')}</div>
+    <div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px;flex-wrap:wrap">
+      <span class="muted" style="font-size:.8em">${list.length} 款遊戲${locked ? ` · ${locked} 款受家長分級限制` : ''}</span>
+      <div class="seg" style="font-size:.9em">${['熱門', '評分', '收藏'].map(s => `<button class="${S.sort === s ? 'on' : ''}" data-act="sort" data-v="${s}">${s}</button>`).join('')}</div></div>
+    ${list.length ? `<div class="ggrid">${list.map(g => `<button class="card" data-go="detail" data-id="${g.id}" ${!allowed(g) ? 'style="opacity:.45"' : ''}>${cover(g, { tag: !allowed(g) ? `<span class="tagc"><span class="pill">${ic('lock')}${g.age}</span></span>` : (g.team === '示範' ? '<span class="tagc"><span class="pill hot">可試玩</span></span>' : '') })}
+      <span class="gname">${g.t}</span><span class="meta"><span class="pill age">${g.age}</span>${g.cat}<span class="star">${ic('star')}${g.r}</span></span></button>`).join('')}</div>`
+      : `<div class="empty">${ic('heart')}<span>還沒有收藏的遊戲。<br>在遊戲詳情頁按「收藏」就會出現在這裡。</span></div>`}`;
+  },
+
+  detail(v) {
+    const g = G[v.id], sim = similar(g), fav = S.fav.has(g.id), ok = allowed(g);
+    return `
+    ${subHd('', `<button class="icon-btn" data-act="share" aria-label="分享">${ic('share')}</button>`)}
+    <div class="dhero">${cover(g, { title: false })}</div>
+    <div class="dbody">
+      <div><span class="en">${g.en}</span><h1>${g.t}</h1></div>
+      <div class="meta"><span class="pill age">${g.age}</span><span>${g.cat}</span><span>·</span><span>約 ${g.mins} 分鐘</span><span>·</span><span>${g.plays} 次遊玩</span><span class="star">${ic('star')}${g.r}</span></div>
+      ${ok ? `<button class="btn pri wide" data-go="play" data-id="${g.id}">${ic('play')}${S.recent.includes(g.id) ? '繼續遊玩' : '開始玩'}</button>`
+           : `<button class="btn sec wide" data-go="parental">${ic('lock')}此遊戲為 ${g.age}，需家長調整分級</button>`}
+      <p>${g.d}</p>
+      <div class="acts3"><button class="${fav ? 'on' : ''}" data-act="fav" data-id="${g.id}">${ic(fav ? 'check' : 'plus')}${fav ? '已收藏' : '收藏'}</button>
+        <button data-act="rate">${ic('star')}評分</button><button data-act="share">${ic('share')}分享給好友</button></div>
+      <div class="side" style="display:grid;gap:14px">
+        <div><h3 class="h3" style="margin-bottom:6px">玩法說明</h3><ol class="how">${g.how.map(h => `<li>${h}</li>`).join('')}</ol></div>
+        <div class="dev">${av(Object.keys(PEOPLE).find(k => PEOPLE[k].n === g.dev) || 'an')}<div><b>${g.dev}</b> · ${g.team}<br><span class="muted">遊戲模組 <span class="num">@gamebox/${g.en.toLowerCase().replace(/ /g, '-')}</span></span></div></div>
+        <div><h3 class="h3" style="margin-bottom:4px">好友排行</h3><div class="lb">
+          ${[['bear', 2340], ['me', S.best[g.id] || 1880], ['kiki', 1210]].sort((a, b) => b[1] - a[1]).map(([k, sc], i) => `<div class="${k === 'me' ? 'me' : ''}"><b>${i + 1}</b>${av(k === 'me' ? null : k, 'width:1.8em;height:1.8em;font-size:.75em')}<span>${k === 'me' ? '我' : PEOPLE[k].n}</span><span class="num">${sc.toLocaleString()}</span></div>`).join('')}</div></div>
+      </div>
+      <div class="blk" style="margin:4px -16px 0"><div class="blk-h"><h2>類似遊戲推薦</h2></div><div class="row">${sim.map(x => gcard(x, `<span class="cap">${x.cat} · ${x.tags.filter(t => g.tags.includes(t)).join('、') || '同類型'}</span>`)).join('')}</div></div>
+    </div>`;
+  },
+
+  play(v) {
+    const g = G[v.id];
+    return `<div class="play" id="play">
+      <div class="hud"><button class="icon-btn" data-act="pause" aria-label="暫停" style="background:#00000080;border:1px solid var(--line)">${ic('pause')}</button>
+        <div class="box"><small>SCORE</small><b id="score" class="num">0</b></div><div class="box"><small>TIME</small><b id="time" class="num">15</b></div></div>
+      <div class="arena" id="arena"><div class="overlay" id="ready" style="background:none"><div class="countdown" id="cd">3</div></div></div>
+      <div class="playfoot">正在玩「${g.t}」· GameHost 容器（示範：以「點點橘子」代替成員遊戲）<br>今日已玩 <span class="num">${S.parental.mins - 18}</span> / ${S.parental.mins} 分鐘</div>
+      <div class="overlay" id="pauseov" hidden><div class="panel"><h2>已暫停</h2>
+        <button class="btn pri wide" data-act="resume">${ic('play')}繼續</button>
+        <button class="btn sec wide" data-act="restart">${ic('refresh')}重新開始</button>
+        <button class="btn ghost wide" data-act="quit">離開遊戲</button></div></div>
+    </div>`;
+  },
+
+  result(v) {
+    const g = G[v.id], sc = v.score, prev = v.prev || 0, rec = sc > prev, stars = sc >= 200 ? 3 : sc >= 110 ? 2 : sc > 0 ? 1 : 0, coins = Math.round(sc / 10);
+    return `
+    <div class="result"><span class="kicker">${rec ? 'NEW RECORD' : 'GAME OVER'}</span>
+      <div class="score num">${sc}</div><span class="muted" style="font-size:.85em">${g.t} · 最佳紀錄 ${Math.max(sc, prev)}</span>
+      <div class="stars">${[0, 1, 2].map(i => `<span class="${i < stars ? 'on' : ''}">${ic('star')}</span>`).join('')}</div>
+      <div class="rewards"><span>G 幣 <b>+${coins}</b></span><span>經驗 <b>+${20 + stars * 10}</b></span>${rec ? '<span><b>好友排行 ↑1</b></span>' : ''}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+        <button class="btn pri" data-act="again" data-id="${g.id}">${ic('refresh')}再玩一次</button>
+        <button class="btn sec" data-act="share">${ic('share')}分享成績</button>
+        <button class="btn ghost" data-act="toLib">回遊戲庫</button></div></div>
+    <div class="blk" style="padding-bottom:24px"><div class="blk-h"><h2>喜歡「${g.t}」？你可能也會喜歡</h2></div><div class="row">${similar(g).map(x => gcard(x)).join('')}</div></div>`;
+  },
+
+  search() {
+    const q = S.q.trim();
+    const res = q ? GAMES.filter(g => (g.t + g.en + g.cat + g.tags.join('')).toLowerCase().includes(q.toLowerCase())) : [];
+    return `${subHd('搜尋')}
+    <label class="searchbox">${ic('search')}<input id="q" type="search" placeholder="搜尋遊戲、類型、好友 ID" value="${S.q}" autocomplete="off"></label>
+    ${q ? (res.length ? `<div class="group-t">找到 ${res.length} 款遊戲</div><div class="ggrid" style="padding-top:0">${res.map(g => gcard(g, `<span class="gname">${g.t}</span>`)).join('')}</div>`
+      : `<div class="empty">找不到「${q}」相關的遊戲。<br>試試「數學」、「節奏」或「益智」。</div>`)
+    : `<div class="group-t">最近搜尋</div><div class="chips">${['數學', '節奏小鼓手', '迷宮'].map(s => `<button class="chip" data-act="q" data-v="${s}">${ic('history')} ${s}</button>`).join('')}</div>
+      <div class="group-t">熱門搜尋</div><div class="list">${['星際跳跳', '數字泡泡', '雙人', '拼圖'].map((s, i) => `<button class="li" data-act="q" data-v="${s}"><span class="num" style="color:var(--orange);width:1.2em">${i + 1}</span><span class="t"><b>${s}</b></span>${ic('up')}</button>`).join('')}</div>
+      <div class="group-t">依類型瀏覽</div><div class="ggrid" style="padding-top:0">${CATS.slice(1).map((c, i) => `<button class="card" data-act="catgo" data-v="${c}"><div class="cover" style="aspect-ratio:16/7">${art([24, 200, 196, 330, 160][i], ['stripes', 'grid', 'dots', 'rings', 'zig'][i], c)}<div class="ttl" style="font-size:1.05em">${c}</div></div></button>`).join('')}</div>`}`;
+  },
+
+  ranking() {
+    const k = { 本週: 'plays', 本月: 'r', 新上架: 'id' }[S.rankTab];
+    const list = [...GAMES].filter(g => g.id !== 'g11').sort((a, b) => k === 'id' ? parseInt(b.id.slice(1)) - parseInt(a.id.slice(1)) : parseFloat(b[k]) - parseFloat(a[k]));
+    return `${subHd('熱門遊戲排行')}
+    <div class="chips" style="padding-top:12px">${['本週', '本月', '新上架'].map(t => `<button class="chip ${S.rankTab === t ? 'on' : ''}" data-act="rank" data-v="${t}">${t}</button>`).join('')}</div>
+    <div class="list" style="margin-top:8px">${list.map((g, i) => `<button class="li" data-go="detail" data-id="${g.id}"><span style="font-family:var(--f-display);font-weight:900;font-size:1.8em;width:1.3em;color:${i < 3 ? 'var(--orange)' : 'var(--mute)'}">${i + 1}</span>
+      <span style="width:4.6em;flex:none">${cover(g, { title: false })}</span><span class="t"><b>${g.t}</b><small>${g.cat} · ${g.plays} 次遊玩 · ★${g.r}</small></span>
+      <span style="color:${i % 4 === 2 ? 'var(--bad)' : 'var(--good)'}">${ic(i % 4 === 2 ? 'down' : 'up')}</span></button>`).join('')}</div>`;
+  },
+
+  store() {
+    let list = S.storeCat === '熱門與推薦' ? PRODUCTS.filter(p => p.hot).concat(PRODUCTS.filter(p => !p.hot)) : PRODUCTS.filter(p => p.type === S.storeCat);
+    if (S.storeSort === '價格') list = [...list].sort((a, b) => (a.cur === 'G' ? a.price : a.price * 6) - (b.cur === 'G' ? b.price : b.price * 6));
+    return `${subHd('商城', `<button class="icon-btn" data-go="inventory" aria-label="背包">${ic('bag')}</button>${cartBtn()}`)}
+    <div class="walletc" style="margin-top:12px"><div><span class="muted" style="font-size:.78em">我的 G 幣</span><div class="big">${S.coins.toLocaleString()}<small>G</small></div></div><button class="btn pri" data-act="topup">儲值</button></div>
+    <div class="chips" style="margin-top:4px">${STORE_CATS.map(c => `<button class="chip ${S.storeCat === c ? 'on' : ''}" data-act="scat" data-v="${c}">${c}</button>`).join('')}</div>
+    <div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span class="muted" style="font-size:.8em">${list.length} 項商品</span>
+      <div class="seg" style="font-size:.9em">${['熱門', '價格'].map(s => `<button class="${S.storeSort === s ? 'on' : ''}" data-act="ssort" data-v="${s}">${s === '價格' ? '價格低→高' : s}</button>`).join('')}</div></div>
+    <div class="pgrid">${list.map(p => `<button class="prod" data-go="product" data-id="${p.id}">${pcover(p)}<div class="pb"><span class="pn">${p.n}</span><span class="muted" style="font-size:.74em">${p.type}${p.g ? ` · ${G[p.g].t}` : ''}</span><span class="price">${price(p)}</span></div></button>`).join('')}</div>`;
+  },
+
+  product(v) {
+    const p = P[v.id], own = S.owned.includes(p.id);
+    return `${subHd(p.n, cartBtn())}
+    <div style="max-width:420px;margin:0 auto;padding:16px">${pcover(p).replace('class="cover"', 'class="cover" style="aspect-ratio:1;border-radius:12px"')}</div>
+    <div class="pad" style="display:grid;gap:12px;padding-bottom:24px;max-width:640px;margin:0 auto">
+      <div><span class="pill">${p.type}</span>${p.g ? ` <span class="pill">${G[p.g].t}</span>` : ''}<h2 style="margin:8px 0 2px;font-size:1.4em">${p.n}</h2><span class="price" style="font-size:1.3em">${price(p)}</span></div>
+      <p style="margin:0;color:#ddd1c8;font-size:.92em">${p.d}</p>
+      <div class="sum" style="margin:0"><div><span class="muted">適用</span><span>${p.g ? G[p.g].t : '全平台'}</span></div><div><span class="muted">有效期限</span><span>${p.type === '票券' ? '購買後 30 天' : '永久'}</span></div><div><span class="muted">家長核准</span><span>${S.parental.buy ? '需要' : '不需要'}</span></div></div>
+      ${own ? `<button class="btn sec wide" data-go="inventory">${ic('check')}已擁有 · 到背包查看</button>` :
+      `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn sec" data-act="addcart" data-id="${p.id}">${ic('cart')}加入購物車</button><button class="btn pri" data-act="buynow" data-id="${p.id}">立即購買</button></div>`}
+    </div>`;
+  },
+
+  cart() {
+    const items = S.cart.map(c => ({ ...P[c.id], q: c.q }));
+    const g = items.filter(i => i.cur === 'G').reduce((a, i) => a + i.price * i.q, 0), nt = items.filter(i => i.cur === 'NT$').reduce((a, i) => a + i.price * i.q, 0);
+    const payIdx = S.set.pay0 ?? 0, pay = SETTINGS[4].items[0].opts[payIdx];
+    return `${subHd('購物車與結帳')}
+    ${items.length ? `${items.map(i => `<div class="cartrow">${pcover(i)}<div><b style="font-size:.92em">${i.n}</b><br><span class="price">${price(i)}</span></div>
+      <div class="qty"><button data-act="qty" data-id="${i.id}" data-v="-1" aria-label="減少">−</button><span>${i.q}</span><button data-act="qty" data-id="${i.id}" data-v="1" aria-label="增加">+</button></div></div>`).join('')}
+    <div class="sum">${g ? `<div><span class="muted">G 幣商品</span><span class="num">${g.toLocaleString()} G</span></div><div><span class="muted">G 幣餘額</span><span class="num" style="color:${g > S.coins ? 'var(--bad)' : 'inherit'}">${S.coins.toLocaleString()} G</span></div>` : ''}
+      ${nt ? `<div><span class="muted">付款方式</span><button data-act="paym" style="color:var(--orange)">${pay} ›</button></div><div><span class="muted">發票</span><span>手機條碼載具</span></div>` : ''}
+      <div class="tot"><span>合計</span><span class="num">${[g ? g.toLocaleString() + ' G' : '', nt ? 'NT$' + nt : ''].filter(Boolean).join(' + ')}</span></div></div>
+    ${S.parental.buy ? `<div class="banner">${ic('shield')}<span class="t">家長控制已開啟：送出後會通知家長核准，核准後才會扣款。</span></div>` : ''}
+    <div class="pad" style="padding-bottom:24px"><button class="btn pri wide" data-act="checkout" ${g > S.coins ? 'disabled' : ''}>${S.parental.buy ? '送出給家長核准' : '確認付款'}</button></div>`
+    : `<div class="empty">${ic('cart')}<span>購物車是空的</span><button class="btn pri" data-go="store">去逛商城</button></div>`}`;
+  },
+
+  inventory() {
+    return `${subHd('個人商城資產')}
+    <div class="chips" style="padding-top:12px">${['背包', '購買紀錄'].map(t => `<button class="chip ${S.invTab === t ? 'on' : ''}" data-act="inv" data-v="${t}">${t === '背包' ? '背包 / 倉庫' : t}</button>`).join('')}</div>
+    ${S.invTab === '背包' ? `<div class="pgrid">${S.owned.map(id => P[id]).map(p => `<div class="prod">${pcover(p)}<div class="pb"><span class="pn">${p.n}</span><span class="muted" style="font-size:.74em">${p.type} · ${p.type === '道具' ? '剩餘 ' + (p.id === 'p4' ? 3 : 2) : '已裝備'}</span></div></div>`).join('')}</div>`
+    : `<div class="list" style="margin-top:8px">${S.orders.map(o => `<div class="li"><span class="ic">${ic('receipt')}</span><span class="t"><b>${o.n}</b><small>${o.d}</small></span><span class="v"><span class="num">${o.v}</span><br><span class="pill ${o.st === '完成' ? 'good' : 'warn'}">${o.st}</span></span></div>`).join('')}</div>`}`;
+  },
+
+  profile() {
+    const u = S.user;
+    return `
+    <div class="hd"><h1>個人</h1><div class="acts"><button class="icon-btn" data-go="friends" aria-label="加好友">${ic('userplus')}</button><button class="icon-btn" data-act="tab" data-v="settings" aria-label="設定">${ic('gear')}</button></div></div>
+    <div class="prof">${av(null)}<div style="flex:1;min-width:0"><h2>${u.name}</h2>
+      <span class="muted num" style="font-size:.78em">ID ${u.id} <button data-act="copyid" style="color:var(--orange);vertical-align:-3px" aria-label="複製 ID">${ic('copy')}</button></span>
+      <div class="lvl"><span style="font-size:.8em"><b style="color:var(--orange)">Lv.${u.level}</b> · ${u.title}</span><div class="bar"><i style="width:${u.guest ? 20 : 64}%"></i></div><span class="muted" style="font-size:.72em">再 ${u.guest ? 160 : 360} 經驗升級為「${u.guest ? '小小玩家' : '星際冒險家'}」</span></div></div></div>
+    ${u.guest ? `<div class="banner">${ic('info')}<span class="t"><b>訪客模式</b>：進度只存在這台裝置。建立帳號即可儲值、加好友並同步進度。</span><button class="btn pri" data-act="upgrade" style="padding:.45em .8em">註冊</button></div>` : ''}
+    <div class="stats3"><div><b>${u.guest ? 3 : 27}</b><small>玩過的遊戲</small></div><div><b>${u.guest ? 0 : 14}</b><small>好友</small></div><div><b>${u.guest ? 2 : 41}</b><small>成就徽章</small></div></div>
+    <div class="walletc"><div><span class="muted" style="font-size:.78em">儲值餘額</span><div class="big">${u.guest ? 0 : S.coins.toLocaleString()}<small>G</small></div><span class="muted" style="font-size:.74em">優惠券 3 張 · 1 張 7 天內到期</span></div><button class="btn pri" data-go="wallet">錢包</button></div>
+    <div class="group-t">帳號</div><div class="list">
+      ${[['users', '好友', u.guest ? '需註冊' : '14 位 · 2 則邀請', 'friends'], ['wallet', '資產與錢包', '儲值、優惠券、交易明細', 'wallet'], ['bag', '我的商城資產', '背包 / 購買紀錄', 'inventory'], ['lock', '帳號安全與登入', '綁定、密碼、登入紀錄', 'security']]
+        .map(([i, t, s, to]) => `<button class="li" data-go="${to}"><span class="ic">${ic(i)}</span><span class="t"><b>${t}</b><small>${s}</small></span>${ic('chev')}</button>`).join('')}</div>
+    <div class="group-t">最近玩過</div><div class="row" style="padding-bottom:24px">${S.recent.map(id => gcard(G[id])).join('')}</div>`;
+  },
+
+  wallet() {
+    if (S.user.guest) return `${subHd('資產與錢包')}<div class="empty">${ic('wallet')}<span>訪客模式無法儲值。</span><button class="btn pri" data-act="upgrade">建立帳號</button></div>`;
+    return `${subHd('資產與錢包')}
+    <div class="walletc" style="margin-top:14px"><div><span class="muted" style="font-size:.78em">儲值餘額</span><div class="big">${S.coins.toLocaleString()}<small>G</small></div><span class="muted" style="font-size:.74em">本月已消費 NT$90 / 限額 NT$300</span></div><button class="btn pri" data-act="topup">儲值</button></div>
+    <div class="group-t">優惠與票券</div><div class="list">
+      ${[['週末雙倍經驗券', '10/05 到期', 'warn', '7 天內到期'], ['商城 9 折券', '10/31 到期', 'good', '可使用'], ['新手禮包兌換碼', '已兌換', '', '已使用']].map(([n, d, c, st]) => `<div class="li"><span class="ic">${ic('ticket')}</span><span class="t"><b>${n}</b><small>${d}</small></span><span class="pill ${c}">${st}</span></div>`).join('')}</div>
+    <div class="group-t">交易明細</div><div class="list" style="padding-bottom:20px">
+      ${[['儲值 G 幣 500', '09/02 14:21', '+500 G', 'var(--good)'], ['提示卡 ×5', '09/21 19:08', '−120 G', 'var(--text)'], ['復活愛心 ×3', '09/14 18:40', '−90 G', 'var(--text)'], ['遊戲獎勵 · 節奏小鼓手', '09/27 17:02', '+32 G', 'var(--good)']].map(([n, d, v, c]) => `<div class="li"><span class="t"><b>${n}</b><small class="num">${d}</small></span><span class="num" style="color:${c};font-weight:700">${v}</span></div>`).join('')}</div>`;
+  },
+
+  friends() {
+    if (S.user.guest) return `${subHd('加好友')}<div class="empty">${ic('users')}<span>訪客模式無法加好友。<br>建立帳號後，家長可以設定誰能加你為好友。</span><button class="btn pri" data-act="upgrade">建立帳號</button></div>`;
+    const inv = S.friendTab === '收到的' ? S.invites.in : S.invites.out;
+    return `${subHd('加好友', `<button class="icon-btn" data-act="qr" aria-label="我的 QR Code">${ic('qr')}</button>`)}
+    <div class="group-t">好友搜尋與新增</div>
+    <label class="searchbox" style="margin-top:0">${ic('search')}<input id="fq" type="search" placeholder="輸入好友的用戶 ID，例如 GB-204817" autocomplete="off"></label>
+    <div class="imp"><button data-act="import" data-v="通訊錄">${ic('contacts')}通訊錄匯入</button><button data-act="import" data-v="社群帳號">${ic('link')}第三方帳號匯入</button><button data-act="qr">${ic('qr')}QR Code 掃描</button></div>
+    ${S.parental.friend ? `<div class="banner" style="margin-top:12px">${ic('shield')}<span class="t">送出的好友邀請需要家長核准後才會寄出。</span></div>` : ''}
+    <div class="group-t">邀請管理</div>
+    <div class="chips">${['收到的', '已送出'].map(t => `<button class="chip ${S.friendTab === t ? 'on' : ''}" data-act="ftab" data-v="${t}">${t === '收到的' ? `好友申請列表 (${S.invites.in.length})` : `發送的邀請 (${S.invites.out.length})`}</button>`).join('')}</div>
+    ${inv.length ? inv.map(k => `<div class="fr">${av(k)}<span class="t"><b>${PEOPLE[k].n}</b><small>Lv.${PEOPLE[k].lv} · ${S.friendTab === '收到的' ? '想加你為好友' : '等待對方回覆'}</small></span>
+      ${S.friendTab === '收到的' ? `<button class="btn pri" data-act="accept" data-v="${k}">接受</button><button class="btn ghost" data-act="decline" data-v="${k}">略過</button>` : `<button class="btn ghost" data-act="cancelinv" data-v="${k}">取消</button>`}</div>`).join('')
+      : `<p class="pad muted" style="font-size:.85em">目前沒有${S.friendTab === '收到的' ? '新的好友申請' : '送出中的邀請'}。</p>`}
+    <div class="group-t">推薦與互動 · 推薦好友</div>
+    ${['bear', 'abu'].map(k => `<div class="fr">${av(k)}<span class="t"><b>${PEOPLE[k].n}</b><small>Lv.${PEOPLE[k].lv} · ${k === 'bear' ? '2 位共同好友' : '同樣喜歡益智遊戲'}</small></span>${S.added.has(k) ? '<span class="pill">已送出</span>' : `<button class="btn sec" data-act="add" data-v="${k}">${ic('plus')}加好友</button>`}</div>`).join('')}
+    <div class="group-t">最近一起遊戲的帳號</div>
+    <div style="padding-bottom:24px">${[['an', 'g4'], ['kiki', 'g5']].map(([k, g]) => `<div class="fr">${av(k)}<span class="t"><b>${PEOPLE[k].n}</b><small>一起玩了「${G[g].t}」· 昨天</small></span>${S.added.has(k) ? '<span class="pill">已送出</span>' : `<button class="btn sec" data-act="add" data-v="${k}">${ic('plus')}加好友</button>`}</div>`).join('')}</div>`;
+  },
+
+  security() {
+    const u = S.user;
+    return `${subHd('帳號安全與登入')}
+    <div class="group-t">綁定資訊</div><div class="list">
+      ${[['家長 Email', u.guest ? '未綁定' : 'pa***@mail.com'], ['手機號碼', u.guest ? '未綁定' : '09**-***-128'], ['Apple / Google 帳號', u.guest ? '未綁定' : '已綁定 Google']].map(([t, v]) => `<button class="li" data-act="noop"><span class="t"><b>${t}</b></span><span class="v">${v}</span>${ic('chev')}</button>`).join('')}</div>
+    <div class="group-t">密碼與驗證</div><div class="list">
+      <button class="li" data-act="noop"><span class="t"><b>變更密碼</b><small>上次變更：3 個月前</small></span>${ic('chev')}</button>
+      <div class="li"><span class="t"><b>兩步驟驗證</b><small>登入新裝置時寄驗證碼到家長 Email</small></span><button class="tg ${S.set.sec2fa !== false ? 'on' : ''}" data-act="rawtg" data-k="sec2fa" aria-label="兩步驟驗證"></button></div></div>
+    <div class="group-t">登入紀錄</div><div class="list">
+      ${[['iPad · Game Box 1.0', '台北市 · 目前裝置', true], ['Android 手機', '台北市 · 09/27 20:14'], ['Windows 電腦', '新北市 · 09/25 16:02']].map(([d, s, now]) => `<div class="li"><span class="ic">${ic(d.includes('電腦') ? 'display' : 'clock')}</span><span class="t"><b>${d}</b><small>${s}</small></span>${now ? '<span class="pill good">使用中</span>' : '<button class="btn ghost" style="padding:.35em .7em;font-size:.8em" data-act="noop">登出</button>'}</div>`).join('')}</div>
+    <div class="group-t">隱私設定</div><div class="list"><button class="li" data-go="setgroup" data-k="privacy"><span class="t"><b>好友隱私設定</b><small>加好友權限、在線狀態、訊息過濾</small></span>${ic('chev')}</button>
+      <button class="li" data-act="noop"><span class="t"><b>資料下載與刪除</b><small>依兒童隱私規範，家長可申請刪除</small></span>${ic('chev')}</button></div>
+    <div class="group-t">登出 / 變更帳號</div><div class="list" style="padding-bottom:24px">
+      <button class="li" data-act="switch"><span class="ic">${ic('users')}</span><span class="t"><b>切換帳號</b><small>同一台裝置最多 4 位小玩家</small></span></button>
+      <button class="li" data-act="logout" style="color:var(--bad)"><span class="ic" style="color:var(--bad)">${ic('logout')}</span><span class="t"><b>登出</b></span></button></div>`;
+  },
+
+  settings() {
+    return `
+    <div class="hd"><h1>設定</h1></div>
+    <div class="list">${SETTINGS.map(g => `<button class="li" data-go="setgroup" data-k="${g.key}"><span class="ic">${ic(g.icon)}</span><span class="t"><b>${g.t}</b><small>${g.sub}</small></span>${ic('chev')}</button>`).join('')}
+      <button class="li hl" data-go="parental"><span class="ic">${ic('shield')}</span><span class="t"><b>家長控制</b><small>遊玩時間、年齡分級、購買核准、遊玩報告</small></span><span class="pill hot">PIN</span>${ic('chev')}</button></div>
+    <div class="group-t">其他</div><div class="list" style="padding-bottom:24px">
+      ${[['info', '關於 Game Box', '版本 1.0.0 (雛形)'], ['book', '使用條款與隱私權政策', ''], ['users', '客服與意見回饋', '']].map(([i, t, v]) => `<button class="li" data-act="noop"><span class="ic">${ic(i)}</span><span class="t"><b>${t}</b></span><span class="v">${v}</span></button>`).join('')}</div>`;
+  },
+
+  setgroup(v) {
+    const g = SETTINGS.find(x => x.key === v.k);
+    return `${subHd(g.t)}<div class="list" style="padding-bottom:24px">${g.items.map((it, i) => {
+      const val = setv(g.key, i, it), k = g.key + i;
+      let ctl = '';
+      if (it.type === 'select') ctl = `<span class="v" style="color:var(--orange)">${it.opts[val]}</span>${ic('chev')}`;
+      if (it.type === 'toggle') ctl = `<span class="tg ${val ? 'on' : ''}"></span>`;
+      if (it.type === 'range') ctl = `<input type="range" id="r-${k}" data-k="${k}" min="0" max="100" value="${val}" aria-label="${it.t}"><span class="num v" style="width:2.4em">${val}</span>`;
+      if (it.type === 'font') ctl = `<span class="muted" style="font-size:.75em">A</span><input type="range" id="r-font" data-font="1" min="13" max="19" step="1" value="${S.afs}" aria-label="字體大小"><span style="font-size:1.1em">A</span>`;
+      if (it.type === 'link') ctl = `<span class="v">${it.v}</span>${ic('chev')}`;
+      const tag = (it.type === 'range' || it.type === 'font') ? 'div' : 'button';
+      return `<${tag} class="li" ${tag === 'button' ? `data-act="setitem" data-k="${k}" data-g="${g.key}" data-i="${i}"` : ''}><span class="t"><b>${it.t}</b>${it.s ? `<small>${it.s}</small>` : ''}</span>${ctl}</${tag}>`;
+    }).join('')}</div>`;
+  },
+
+  parental() {
+    if (!S.pinOk) return `${subHd('家長控制')}
+      <div class="pinpad"><span class="shield">${ic('shield')}</span><div><h2 style="margin:0 0 4px;font-size:1.2em">請輸入家長 PIN 碼</h2><span class="muted" style="font-size:.82em">雛形示範 PIN：0000</span></div>
+        <div class="pindots" id="pindots">${[0, 1, 2, 3].map(i => `<i class="${i < S.pin.length ? 'on' : ''}"></i>`).join('')}</div>
+        <div class="keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, '⌫'].map(k => k === '' ? '<span></span>' : `<button data-act="pin" data-v="${k}" aria-label="${k === '⌫' ? '刪除' : k}">${k}</button>`).join('')}</div>
+        <button class="muted" style="font-size:.8em" data-act="noop">忘記 PIN？寄重設信到家長 Email</button></div>`;
+    const P0 = S.parental, week = [45, 30, 60, 20, 55, 90, 75], days = ['一', '二', '三', '四', '五', '六', '日'];
+    const W = 300, H = 130, top = 120, x0 = 26, bw = 26, gap = (W - x0 - bw * 7) / 7, y = m => 10 + (H - 30) * (1 - m / top);
+    const bars = week.map((m, i) => `<rect x="${x0 + i * (bw + gap) + gap / 2}" y="${y(m)}" width="${bw}" height="${y(0) - y(m)}" rx="3" fill="${m > P0.mins ? 'var(--warn)' : 'var(--orange)'}"/><text x="${x0 + i * (bw + gap) + gap / 2 + bw / 2}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--mute)">${days[i]}</text>`).join('');
+    const grid = [0, 60, 120].map(m => `<line x1="${x0}" x2="${W}" y1="${y(m)}" y2="${y(m)}" stroke="var(--line)"/><text x="${x0 - 5}" y="${y(m) + 3}" text-anchor="end" font-size="9" fill="var(--mute)">${m}</text>`).join('');
+    const limitLine = P0.mins <= top ? `<line x1="${x0}" x2="${W}" y1="${y(P0.mins)}" y2="${y(P0.mins)}" stroke="var(--text)" stroke-dasharray="4 3"/>` : '';
+    const tgRow = (k, t, s) => `<button class="li" data-act="ptg" data-k="${k}"><span class="t"><b>${t}</b><small>${s}</small></span><span class="tg ${P0[k] ? 'on' : ''}"></span></button>`;
+    return `${subHd('家長控制', `<button class="icon-btn" data-act="lockp" aria-label="鎖定">${ic('lock')}</button>`)}
+    <div class="group-t">本週遊玩報告 · 平均 ${Math.round(week.reduce((a, b) => a + b) / 7)} 分鐘 / 天</div>
+    <div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="本週每日遊玩分鐘數">${grid}${bars}${limitLine}</svg>
+      <div class="lg"><span><i style="background:var(--orange)"></i>在限制內</span><span><i style="background:var(--warn)"></i>超過每日上限</span><span>虛線：每日上限 ${P0.mins} 分鐘</span></div></div>
+    <div class="group-t">時間管理</div><div class="list">
+      <div class="li"><span class="t"><b>每日遊玩時間</b><small>時間到會先提醒 5 分鐘，再自動結束遊戲</small></span><input type="range" id="r-mins" data-pm="mins" min="15" max="180" step="15" value="${P0.mins}" aria-label="每日遊玩時間"><span class="num v" style="width:3.4em">${P0.mins} 分</span></div>
+      ${tgRow('night', '睡前停用', '每天 21:00 – 07:00 無法開啟遊戲')}</div>
+    <div class="group-t">內容與社交</div><div class="list">
+      <button class="li" data-act="age"><span class="t"><b>年齡分級</b><small>只顯示此分級以下的遊戲</small></span><span class="v" style="color:var(--orange)">${P0.age} 以下</span>${ic('chev')}</button>
+      ${tgRow('friend', '加好友需家長核准', '孩子送出與接受的邀請都需核准')}
+      <button class="li" data-act="chat"><span class="t"><b>聊天訊息</b><small>建議 6–9 歲使用預設片語</small></span><span class="v" style="color:var(--orange)">${P0.chat}</span>${ic('chev')}</button></div>
+    <div class="group-t">消費</div><div class="list" style="padding-bottom:24px">
+      ${tgRow('buy', '購買需家長核准', '所有商城購買與儲值都會通知家長')}
+      <button class="li" data-go="setgroup" data-k="pay"><span class="t"><b>金流與支付設定</b><small>消費限額、付款方式、退款申請</small></span>${ic('chev')}</button></div>`;
+  },
+};
+
+/* ================= 登入 ================= */
+function loginScreen() {
+  const pick = ['g5', 'g2', 'g1', 'g3', 'g7', 'g4', 'g9', 'g6', 'g10', 'g8', 'g5', 'g2'];
+  return `<div class="login"><div class="wall"><div class="mosaic">${pick.map(id => cover(G[id], { title: false })).join('')}</div>
+    <div class="mark"><span class="logo">GAME<b>BOX</b></span><p>一個 App，裝滿朋友們做的小遊戲。</p></div></div>
+    <div class="form">
+      <button class="btn pri wide" data-act="login">使用 Email 登入</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn sec" data-act="login">Apple 登入</button><button class="btn sec" data-act="login">Google 登入</button></div>
+      <div class="or">或</div>
+      <button class="btn ghost wide" data-act="guest">${ic('mask')}以訪客身分開始玩</button>
+      <p class="fine">適合 6 歲以上。13 歲以下註冊需家長 Email 同意。</p>
+    </div></div>`;
+}
+
+/* ================= 繪製 ================= */
+const app = document.getElementById('app');
+let lastKey = '';
+function render(nav) {
+  stopGame();
+  const v = S.user ? cur() : { s: 'login' };
+  const key = S.tab + JSON.stringify(v);
+  const prevView = app.querySelector('.view'), keep = !nav && key === lastKey && prevView ? prevView.scrollTop : 0;
+  lastKey = key;
+  app.style.setProperty('--afs', S.afs + 'px');
+  const status = `<div class="status"><span>9:41</span><span class="dots">5G <i></i></span></div>`;
+  if (!S.user) { app.innerHTML = `<div class="shell" style="grid-template-rows:auto minmax(0,1fr);grid-template-columns:1fr">${status}<div style="position:relative">${loginScreen()}</div></div><div id="ov"></div>`; }
+  else {
+    const hideTabs = v.s === 'play';
+    const tabs = [['home', 'home', 'Home'], ['library', 'lib', 'Library'], ['profile', 'user', 'Profile'], ['settings', 'gear', 'Settings']];
+    app.innerHTML = `<div class="shell" ${hideTabs ? 'style="grid-template-rows:auto 1fr;grid-template-columns:1fr"' : ''}>${status}
+      <main class="view" id="view">${SCREENS[v.s](v)}</main>
+      ${hideTabs ? '' : `<nav class="tabbar" aria-label="主選單"><span class="rail-logo">GAME<b>BOX</b></span>${tabs.map(([k, i, l]) => `<button class="tab ${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}" aria-current="${S.tab === k}">${ic(i)}<span>${l}</span></button>`).join('')}</nav>`}
+    </div><div id="ov"></div>`;
+    if (keep) app.querySelector('.view').scrollTop = keep;
+    if (v.s === 'play') startGame(v);
+  }
+  paintOverlays(); paintNotes(v); paintFlow(v);
+}
+function paintOverlays() {
+  const ov = app.querySelector('#ov'); if (!ov) return;
+  ov.innerHTML = (S.sheet ? `<div class="sheet-bg" data-act="closeSheet"><div class="sheet" role="dialog" aria-modal="true">${S.sheet}</div></div>` : '') + (S.toast ? `<div class="toast" role="status">${S.toast}</div>` : '');
+}
+
+/* ================= 示範遊戲（點點橘子）================= */
+let GT = null;
+function startGame(v) {
+  const arena = app.querySelector('#arena'), cd = app.querySelector('#cd');
+  GT = { v, score: 0, left: 150, paused: false, timers: [], spawnAcc: 0, phase: 'count', count: 3 };
+  const tick = () => {
+    if (!GT || GT.paused) return;
+    if (GT.phase === 'count') {
+      GT.countAcc = (GT.countAcc || 0) + 1;
+      if (GT.countAcc % 10 === 0) { GT.count--; if (GT.count <= 0) { GT.phase = 'run'; app.querySelector('#ready')?.remove(); } else cd.textContent = GT.count; }
+      return;
+    }
+    GT.left--; GT.spawnAcc++;
+    app.querySelector('#time').textContent = Math.ceil(GT.left / 10);
+    if (GT.spawnAcc >= 6) { GT.spawnAcc = 0; spawn(arena); }
+    if (GT.left <= 0) {
+      const prev = S.best[v.id] || 0, score = GT.score;
+      S.best[v.id] = Math.max(prev, score); S.coins += Math.round(score / 10);
+      if (!S.recent.includes(v.id)) S.recent = [v.id, ...S.recent].slice(0, 3);
+      stopGame(); replace('result', { id: v.id, score, prev });
+    }
+  };
+  GT.iv = setInterval(tick, 100);
+}
+function spawn(arena) {
+  const r = arena.getBoundingClientRect(), t = document.createElement('button');
+  const gold = Math.random() < .18;
+  t.className = 'tgt' + (gold ? ' gold' : ''); t.setAttribute('aria-label', gold ? '金橘子' : '橘子');
+  t.style.left = (40 + Math.random() * Math.max(10, r.width - 80)) + 'px'; t.style.top = (40 + Math.random() * Math.max(10, r.height - 80)) + 'px';
+  t.addEventListener('pointerdown', e => {
+    e.stopPropagation(); if (!GT || GT.paused) return;
+    const pts = gold ? 30 : 10; GT.score += pts; app.querySelector('#score').textContent = GT.score;
+    t.classList.add('hit');
+    const f = document.createElement('span'); f.className = 'float'; f.textContent = '+' + pts; f.style.left = t.style.left; f.style.top = t.style.top; arena.appendChild(f);
+    setTimeout(() => f.remove(), 700);
+  });
+  arena.appendChild(t); setTimeout(() => t.remove(), 1150);
+}
+function stopGame() { if (GT) { clearInterval(GT.iv); GT = null; } }
+
+/* ================= 事件 ================= */
+function ensureUser() { if (!S.user) S.user = member(); }
+const member = () => ({ name: '小橘', guest: false, id: 'GB-204817', level: 9, title: '節奏達人' });
+const guest = () => ({ name: '訪客玩家', guest: true, id: 'GUEST-7F3A', level: 1, title: '新手' });
+
+app.addEventListener('click', e => {
+  const el = e.target.closest('[data-go],[data-act]'); if (!el) return;
+  const d = el.dataset;
+  if (d.act === 'closeSheet' && e.target !== el && !e.target.closest('button[data-act="closeSheet"]')) return;
+  if (d.go) {
+    if (d.go === 'friends' && needAccount('加好友')) return;
+    if (d.go === 'play' && !allowed(G[d.id])) { toast(`「${G[d.id].t}」為 ${G[d.id].age}，需家長調整分級`); return; }
+    return go(d.go, d.id ? { id: d.id } : d.k ? { k: d.k } : {});
+  }
+  const A = {
+    back, tab: () => tab(d.v),
+    login: () => { S.user = member(); S.tab = 'home'; render(true); toast('歡迎回來，小橘！'); },
+    guest: () => { S.user = guest(); S.tab = 'home'; render(true); toast('訪客模式：進度只存在這台裝置'); },
+    upgrade: () => { S.sheet = null; S.user = member(); render(); toast('帳號已建立，訪客進度已轉移'); },
+    closeSheet: () => { S.sheet = null; paintOverlays(); },
+    logout: () => { S.user = null; S.pinOk = false; Object.keys(roots).forEach(k => S.stacks[k] = [{ s: roots[k] }]); render(true); },
+    switch: () => sheet(`<h2>切換帳號</h2>${[['me', '小橘', 'Lv.9 · 目前使用'], ['dodo', '豆豆', 'Lv.3']].map(([k, n, s]) => `<button class="fr" style="padding:6px 0" data-act="closeSheet">${av(k === 'me' ? null : k)}<span class="t" style="text-align:left"><b>${n}</b><small>${s}</small></span></button>`).join('')}<button class="btn ghost wide" data-act="closeSheet">${ic('plus')}新增小玩家</button>`),
+    notif: () => sheet(`<h2>通知</h2><div class="list" style="margin:0 -20px">${[['bell', '節奏小鼓手上架 3 首新歌', '1 小時前'], ['users', '米米想加你為好友', '昨天']].map(([i, t, s]) => `<div class="li"><span class="ic">${ic(i)}</span><span class="t"><b>${t}</b><small>${s}</small></span></div>`).join('')}</div>`),
+    cat: () => { S.cat = d.v; render(); }, sort: () => { S.sort = d.v; render(); },
+    catgo: () => { S.cat = d.v; S.q = ''; S.tab = 'library'; S.stacks.library = [{ s: 'library' }]; render(true); },
+    fav: () => { S.fav.has(d.id) ? S.fav.delete(d.id) : S.fav.add(d.id); render(); toast(S.fav.has(d.id) ? '已加入收藏' : '已移除收藏'); },
+    rate: () => sheet(`<h2>替這款遊戲評分</h2><div class="stars" style="justify-content:center">${[1, 2, 3, 4, 5].map(i => `<button class="on" data-act="rated" aria-label="${i} 顆星">${ic('star')}</button>`).join('')}</div><p style="text-align:center">評分會匿名顯示，不會公開你的名字。</p>`),
+    rated: () => { S.sheet = null; paintOverlays(); toast('謝謝你的評分！'); },
+    share: () => { if (needAccount('分享給好友')) return; sheet(`<h2>分享給好友</h2><div style="display:flex;gap:14px;overflow-x:auto">${['bear', 'an', 'kiki', 'dodo'].map(k => `<button data-act="shared" data-v="${k}" style="display:grid;justify-items:center;gap:4px;font-size:.8em">${av(k)}${PEOPLE[k].n}</button>`).join('')}</div><p>分享內容僅限遊戲卡片與分數，不包含文字訊息。</p>`); },
+    shared: () => { S.sheet = null; paintOverlays(); toast(`已分享給 ${PEOPLE[d.v].n}`); },
+    pause: () => { if (GT) { GT.paused = true; app.querySelector('#pauseov').hidden = false; } },
+    resume: () => { if (GT) { GT.paused = false; app.querySelector('#pauseov').hidden = true; } },
+    restart: () => render(true), quit: () => back(),
+    again: () => replace('play', { id: d.id }),
+    toLib: () => { S.tab = 'library'; S.stacks.library = [{ s: 'library' }]; render(true); },
+    q: () => { S.q = d.v; render(); },
+    rank: () => { S.rankTab = d.v; render(); },
+    scat: () => { S.storeCat = d.v; render(); }, ssort: () => { S.storeSort = d.v; render(); },
+    topup: () => { if (needAccount('儲值')) return; go('product', { id: 'p3' }); },
+    addcart: () => { if (needAccount('購物')) return; const c = S.cart.find(x => x.id === d.id); c ? c.q++ : S.cart.push({ id: d.id, q: 1 }); render(); toast('已加入購物車'); },
+    buynow: () => { if (needAccount('購物')) return; if (!S.cart.find(x => x.id === d.id)) S.cart.push({ id: d.id, q: 1 }); go('cart'); },
+    qty: () => { const c = S.cart.find(x => x.id === d.id); c.q += +d.v; if (c.q <= 0) S.cart = S.cart.filter(x => x !== c); render(); },
+    paym: () => { S.set.pay0 = ((S.set.pay0 ?? 0) + 1) % 3; render(); },
+    checkout: () => {
+      const items = S.cart.map(c => ({ ...P[c.id], q: c.q })), g = items.filter(i => i.cur === 'G').reduce((a, i) => a + i.price * i.q, 0);
+      const pending = S.parental.buy;
+      items.forEach(i => S.orders.unshift({ n: i.n + (i.q > 1 ? ` ×${i.q}` : ''), d: '09/29', v: price(i), st: pending ? '待家長核准' : '完成' }));
+      if (!pending) { S.coins -= g; items.forEach(i => { if (i.cur === 'G' && !S.owned.includes(i.id)) S.owned.push(i.id); }); if (items.some(i => i.cur === 'NT$')) S.coins += items.filter(i => i.cur === 'NT$').reduce((a, i) => a + (i.id === 'p3' ? 1300 : 500) * i.q, 0); }
+      S.cart = []; S.invTab = '購買紀錄'; replace('inventory'); toast(pending ? '已送出，等待家長核准' : '付款成功，商品已放入背包');
+    },
+    inv: () => { S.invTab = d.v; render(); },
+    copyid: () => { try { navigator.clipboard.writeText(S.user.id).then(() => toast('已複製用戶 ID'), () => toast('用戶 ID：' + S.user.id)); } catch (_) { toast('用戶 ID：' + S.user.id); } },
+    ftab: () => { S.friendTab = d.v; render(); },
+    accept: () => { S.invites.in = S.invites.in.filter(k => k !== d.v); render(); toast(S.parental.friend ? `已送出，家長核准後就會和 ${PEOPLE[d.v].n} 成為好友` : `你和 ${PEOPLE[d.v].n} 成為好友了`); },
+    decline: () => { S.invites.in = S.invites.in.filter(k => k !== d.v); render(); },
+    cancelinv: () => { S.invites.out = S.invites.out.filter(k => k !== d.v); render(); },
+    add: () => { S.added.add(d.v); render(); toast(S.parental.friend ? '邀請已送出，等待家長核准' : '好友邀請已送出'); },
+    import: () => toast(`${d.v}匯入：正式版會先請家長授權`),
+    qr: () => sheet(`<h2>我的 QR Code</h2><div class="qrbox">${qr()}<span class="num">${S.user.id}</span><span class="muted" style="font-size:.8em">請好友用 Game Box 掃描這個 QR Code</span></div><button class="btn pri wide" data-act="closeSheet">${ic('qr')}改用相機掃描好友</button>`),
+    setitem: () => {
+      const g = SETTINGS.find(x => x.key === d.g), it = g.items[+d.i];
+      if (it.type === 'select') S.set[d.k] = (setv(d.g, d.i, it) + 1) % it.opts.length;
+      else if (it.type === 'toggle') S.set[d.k] = !setv(d.g, d.i, it);
+      else { toast(`「${it.t}」細節頁將於下一版設計`); return; }
+      if (d.k === 'display1' && S.set[d.k] !== 0) toast('雛形僅實作深色主題');
+      render();
+    },
+    rawtg: () => { S.set[d.k] = S.set[d.k] === false; render(); },
+    pin: () => {
+      if (d.v === '⌫') S.pin = S.pin.slice(0, -1); else if (S.pin.length < 4) S.pin += d.v;
+      if (S.pin.length === 4) { if (S.pin === '0000') { S.pinOk = true; S.pin = ''; render(); return; } render(); const dots = app.querySelector('#pindots'); dots.classList.add('shake'); setTimeout(() => { S.pin = ''; render(); }, 400); return; }
+      render();
+    },
+    lockp: () => { S.pinOk = false; back(); toast('家長控制已鎖定'); },
+    ptg: () => { S.parental[d.k] = !S.parental[d.k]; render(); },
+    age: () => { const o = ['6+', '8+', '12+']; S.parental.age = o[(o.indexOf(S.parental.age) + 1) % o.length]; render(); },
+    chat: () => { const o = ['預設片語', '僅好友', '關閉']; S.parental.chat = o[(o.indexOf(S.parental.chat) + 1) % o.length]; render(); },
+    noop: () => toast('此頁面將於下一版設計'),
+  };
+  (A[d.act] || (() => {}))();
+});
+app.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'q' && !e.isComposing) onQ(t);
+  if (t.dataset.k) { S.set[t.dataset.k] = +t.value; t.nextElementSibling.textContent = t.value; }
+  if (t.dataset.font) { S.afs = +t.value; app.style.setProperty('--afs', S.afs + 'px'); }
+  if (t.dataset.pm) { S.parental.mins = +t.value; t.nextElementSibling.textContent = t.value + ' 分'; }
+});
+function onQ(t) { S.q = t.value; const pos = t.selectionStart; render(); const n = app.querySelector('#q'); n.focus(); n.setSelectionRange(pos, pos); }
+app.addEventListener('compositionend', e => { if (e.target.id === 'q') onQ(e.target); });
+app.addEventListener('change', e => { if (e.target.dataset.pm) render(); });
+app.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'fq' && e.target.value.trim()) toast(`找到用戶 ${e.target.value.trim()}：${S.parental.friend ? '邀請需家長核准' : '已送出邀請'}`); });
+
+function qr() {
+  const R = rng(S.user.id), n = 25, c = 8; let s = '';
+  const finder = (x, y) => `<rect x="${x * c}" y="${y * c}" width="${7 * c}" height="${7 * c}" fill="#000"/><rect x="${(x + 1) * c}" y="${(y + 1) * c}" width="${5 * c}" height="${5 * c}" fill="#fff"/><rect x="${(x + 2) * c}" y="${(y + 2) * c}" width="${3 * c}" height="${3 * c}" fill="#000"/>`;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const inF = (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9); if (!inF && R() > .52) s += `<rect x="${x * c}" y="${y * c}" width="${c}" height="${c}" fill="#000"/>`; }
+  return `<svg viewBox="0 0 ${n * c} ${n * c}" aria-label="QR Code">${s}${finder(0, 0)}${finder(n - 7, 0)}${finder(0, n - 7)}<rect x="${n * c / 2 - 16}" y="${n * c / 2 - 16}" width="32" height="32" rx="6" fill="#ff7a1a"/></svg>`;
+}
+
+/* ================= 展示頁：流程導覽與備註 ================= */
+const FLOW = [
+  ['進入', [['login', '登入 / 訪客模式', () => { S.user = null; }]]],
+  ['Home', [
+    ['home', 'Home 首頁', () => jump('home', [])],
+    ['ranking', '熱門遊戲排行', () => jump('home', [{ s: 'ranking' }])],
+    ['search', '搜尋', () => jump('home', [{ s: 'search' }])]]],
+  ['Library 遊戲流程', [
+    ['library', 'Game List', () => jump('library', [])],
+    ['detail', 'Game Detail', () => jump('library', [{ s: 'detail', id: 'g11' }])],
+    ['play', 'Game Play', () => jump('library', [{ s: 'detail', id: 'g11' }, { s: 'play', id: 'g11' }])],
+    ['result', 'Game Result', () => jump('library', [{ s: 'detail', id: 'g11' }, { s: 'result', id: 'g11', score: 230, prev: 160 }])]]],
+  ['商城', [
+    ['store', '商品展示區', () => jump('home', [{ s: 'store' }])],
+    ['product', '商品詳情區', () => jump('home', [{ s: 'store' }, { s: 'product', id: 'p1' }])],
+    ['cart', '購物車與結帳', () => { if (!S.cart.length) S.cart = [{ id: 'p5', q: 1 }]; jump('home', [{ s: 'store' }, { s: 'cart' }]); }],
+    ['inventory', '個人商城資產', () => jump('home', [{ s: 'store' }, { s: 'inventory' }])]]],
+  ['Profile 使用者帳戶', [
+    ['profile', 'Profile 個人頁', () => jump('profile', [])],
+    ['wallet', '資產與錢包', () => jump('profile', [{ s: 'wallet' }])],
+    ['friends', '加好友', () => jump('profile', [{ s: 'friends' }])],
+    ['security', '帳號安全與登入', () => jump('profile', [{ s: 'security' }])]]],
+  ['Settings 使用設定', [
+    ['settings', 'Settings 設定', () => jump('settings', [])],
+    ['setgroup', '設定群組（介面與顯示）', () => jump('settings', [{ s: 'setgroup', k: 'display' }])],
+    ['parental', '家長控制', () => jump('settings', [{ s: 'parental' }])]]],
+];
+function jump(t, extra) { if (!S.user || S.user.guest) S.user = member(); S.sheet = null; S.tab = t; S.stacks[t] = [{ s: roots[t] }, ...extra]; }
+let stepNo = 0;
+document.getElementById('flow').innerHTML = FLOW.map(([h, items]) => `<div><h3>${h}</h3><ul>${items.map(([k, l]) => `<li><button type="button" id="flow-${k}" data-flow="${k}"><span class="step">${String(++stepNo).padStart(2, '0')}</span>${l}</button></li>`).join('')}</ul></div>`).join('');
+const FLOWFN = Object.fromEntries(FLOW.flatMap(([, it]) => it.map(([k, , fn]) => [k, fn])));
+document.getElementById('flow').addEventListener('click', e => { const b = e.target.closest('[data-flow]'); if (!b) return; FLOWFN[b.dataset.flow](); render(true); });
+function paintFlow(v) { document.querySelectorAll('[data-flow]').forEach(b => b.classList.toggle('on', b.dataset.flow === v.s)); }
+
+const NOTES = {
+  login: { t: '登入 / 訪客模式', map: ['使用者帳戶 › 帳號安全與登入'], rn: 'AuthStack › WelcomeScreen', n: '訪客模式免註冊直接玩，進度存在本機。13 歲以下註冊需家長 Email 同意（Google Play 家庭政策、Apple 兒童類別都要求）。' },
+  home: { t: 'Home 首頁', map: ['Games', '熱門遊戲排行', '搜尋', '商城 › 熱門與推薦', '加好友 › 最近一起遊戲的帳號'], rn: 'HomeTab › HomeScreen', n: '仿串流平台版面：主打大圖 → 繼續遊玩 → Top 10 → 推薦列 → 商城精選 → 好友動態。每一列都是可橫向滑動的 GameRow 元件。' },
+  ranking: { t: '熱門遊戲排行', map: ['熱門遊戲排行'], rn: 'HomeStack › RankingScreen', n: '本週 / 本月 / 新上架三種排序。資料來源建議由後端每日彙整遊玩次數。' },
+  search: { t: '搜尋', map: ['搜尋 › 分支主題 1（最近搜尋、熱門搜尋、類型瀏覽）'], rn: 'HomeStack › SearchScreen', n: '心智圖中「搜尋」只有空白分支，雛形先補上：最近搜尋、熱門搜尋、依類型瀏覽、即時結果。試著輸入「數學」。' },
+  library: { t: 'Game List', map: ['Games', '商城 › 商品分類 / 篩選與排序（共用元件）'], rn: 'LibraryStack › GameListScreen', n: '所有成員的遊戲都從 registry 讀出。家長分級外的遊戲會變暗並上鎖。' },
+  detail: { t: 'Game Detail', map: ['Games', '加好友 › 推薦與互動'], rn: 'LibraryStack › GameDetailScreen', n: '包含簡介、玩法說明、開發成員、好友排行，以及依類型與標籤計算的「類似遊戲推薦」。' },
+  play: { t: 'Game Play', map: ['Games'], rn: 'LibraryStack › GamePlayScreen › <GameHost>', n: '主平台只提供容器（HUD、暫停、時間限制）。成員的遊戲以模組掛進 GameHost，結束時回傳分數。這裡用「點點橘子」示範，可以實際點擊。' },
+  result: { t: 'Game Result', map: ['Games', '使用者帳戶 › 等級與頭銜'], rn: 'LibraryStack › GameResultScreen', n: '顯示分數、星等、G 幣與經驗獎勵，並推薦類似遊戲。分數由遊戲模組的 onFinish 回傳。' },
+  store: { t: '商品展示區', map: ['商城 › 商品展示區', '熱門與推薦', '商品分類', '篩選與排序'], rn: 'HomeStack › StoreScreen', n: 'G 幣商品與實際付款（NT$）商品分開標示，避免孩子混淆。' },
+  product: { t: '商品詳情區', map: ['商城 › 商品詳情區', '商品資訊', '價格與購買'], rn: 'HomeStack › ProductScreen', n: '清楚標示是否需要家長核准。訪客模式點購買會跳出註冊提示。' },
+  cart: { t: '購物車與結帳', map: ['商城 › 購物與結帳區', '購物車', '結帳與付款', '使用設定 › 金流與支付設定'], rn: 'HomeStack › CartScreen', n: '家長控制開啟時，按鈕改為「送出給家長核准」。真實付款走 Google Play Billing / Apple IAP。' },
+  inventory: { t: '個人商城資產', map: ['商城 › 個人商城資產', '背包/倉庫', '購買紀錄'], rn: 'HomeStack › InventoryScreen', n: '背包與購買紀錄。待家長核准的訂單會顯示黃色狀態。' },
+  profile: { t: 'Profile 個人頁', map: ['使用者帳戶 › 帳號基本資訊', '等級與頭銜', '頭像/匿名', '用戶ID'], rn: 'ProfileTab › ProfileScreen', n: '頭像使用系統頭像或暱稱縮寫，不開放上傳照片（兒童隱私）。' },
+  wallet: { t: '資產與錢包', map: ['使用者帳戶 › 資產與錢包', '儲值餘額', '優惠與票券', '交易明細'], rn: 'ProfileStack › WalletScreen', n: '顯示本月消費對照家長設定的限額。' },
+  friends: { t: '加好友', map: ['加好友 › 好友搜尋與新增', '邀請管理', '推薦與互動', '搜尋輸入框', '第三方匯入', 'QR Code 掃描'], rn: 'ProfileStack › FriendsScreen', n: '全部對應心智圖「加好友」分支。邀請受家長控制「加好友需核准」影響。' },
+  security: { t: '帳號安全與登入', map: ['使用者帳戶 › 帳號安全與登入', '綁定資訊', '密碼與驗證', '登入紀錄', '隱私設定', '登出 / 變更帳號'], rn: 'ProfileStack › SecurityScreen', n: '支援同一裝置多位小玩家切換（家庭共用平板很常見）。' },
+  settings: { t: 'Settings 設定', map: ['使用設定', '分支主題 6 → 家長控制'], rn: 'SettingsTab › SettingsScreen', n: '心智圖中紅框圈起的「分支主題 6」在雛形中定為「家長控制」，需 PIN 才能進入。', isNew: true },
+  setgroup: { t: '設定群組', map: ['使用設定 › 介面與顯示', '聲音與音效', '個人化設定與偏好', '好友隱私設定', '金流與支付設定'], rn: 'SettingsStack › SettingsGroupScreen', n: '五個群組共用同一個畫面，由設定資料驅動。「字體大小」可以實際拖曳調整整個 App 的字級。' },
+  parental: { t: '家長控制', map: ['使用設定 › 分支主題 6 → 家長控制'], rn: 'SettingsStack › ParentalScreen', n: '示範 PIN 為 0000。包含遊玩報告、每日時間、睡前停用、年齡分級、加好友 / 聊天 / 購買核准。調整「每日遊玩時間」會即時更新圖表的上限線。', isNew: true },
+};
+function paintNotes(v) {
+  const n = NOTES[v.s] || NOTES.home;
+  document.getElementById('notes').innerHTML = `
+    <section><h3>目前畫面</h3><h2>${n.t}</h2><p><code>${n.rn}</code></p></section>
+    <section><h3>對應心智圖節點</h3><div class="map-tags">${n.map.map(m => `<span class="${n.isNew && m.includes('分支主題 6') ? 'new' : ''}">${m}</span>`).join('')}</div>
+      <p class="legend">橘色：心智圖既有節點　綠色：雛形補上的內容</p></section>
+    <section><h3>設計備註</h3><p>${n.n}</p></section>
+    <section><h3>操作提示</h3><p>左側可直接跳到任一畫面，右上角可切換手機與電腦版面。App 內的按鈕都可以點。</p></section>`;
+}
+
+/* 裝置切換 */
+document.querySelectorAll('[data-device]').forEach(b => b.addEventListener('click', () => {
+  S.device = b.dataset.device;
+  document.getElementById('device').classList.toggle('desktop', S.device === 'desktop');
+  document.querySelectorAll('[data-device]').forEach(x => x.classList.toggle('on', x === b));
+}));
+
+render(true);
+})();
+</script>
+</body>
+</html>
