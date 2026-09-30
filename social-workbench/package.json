@@ -1,0 +1,18 @@
+{
+  "name": "social-workbench-phase0",
+  "version": "0.1.0",
+  "private": true,
+  "description": "社群經營工作台｜階段 0 技術驗證工具（Meta：Facebook 粉專＋Instagram）",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "server": "node --env-file-if-exists=.env src/webhook/server.js",
+    "check": "node --env-file-if-exists=.env src/cli.js",
+    "report": "node --env-file-if-exists=.env src/report.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
+    "zod": "^4.6.5"
+  }
+}
