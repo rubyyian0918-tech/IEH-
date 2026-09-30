@@ -5,7 +5,7 @@ import { config, requireConfig, DATA_DIR } from '../config.js';
 import { get, post, del, getAll } from '../meta/graph.js';
 import { fromFacebookApi } from '../meta/normalize.js';
 import { CommentStore } from '../store.js';
-import { STATUS, result, pageToken, fromGraphError, requireWrite } from './util.js';
+import { STATUS, result, pageToken, userToken, fromGraphError, requireWrite } from './util.js';
 
 const COMMENT_FIELDS = 'id,message,from{id,name},created_time,parent{id},is_hidden,comment_count,can_hide,can_remove';
 
@@ -161,8 +161,9 @@ export const facebookChecks = {
       requireConfig('adAccountId', 'pageId');
       const token = pageToken();
       try {
+        // 廣告帳號要用「使用者 token」查（需要 ads_read，且使用者對廣告帳號有角色）
         const ads = await getAll(`act_${config.adAccountId}/ads`, {
-          token,
+          token: userToken(),
           params: {
             fields: 'id,name,effective_status,creative{id,effective_object_story_id,object_story_id,effective_instagram_media_id,instagram_permalink_url,asset_feed_spec}',
             limit: 50,
@@ -176,8 +177,18 @@ export const facebookChecks = {
           ig_media_id: a.creative?.effective_instagram_media_id || null,
           dynamic_creative: Boolean(a.creative?.asset_feed_spec),
         }));
+        // 第二條路：用粉專 token 列出曾用於廣告的貼文（含動態素材衍生的暗貼文）
+        let adsPosts = [];
+        try {
+          adsPosts = await getAll(`${config.pageId}/ads_posts`, {
+            token, params: { fields: 'id,created_time,is_published,permalink_url', exclude_dynamic_ads: false, include_inline_create: true, limit: 100 },
+          }, 3);
+        } catch (err) {
+          adsPosts = [{ error: err.message, code: err.code }];
+        }
+        const adsPostIds = adsPosts.filter((p) => p.id).map((p) => p.id);
         fs.mkdirSync(DATA_DIR, { recursive: true });
-        fs.writeFileSync(path.join(DATA_DIR, 'ad_map.json'), JSON.stringify(map, null, 2));
+        fs.writeFileSync(path.join(DATA_DIR, 'ad_map.json'), JSON.stringify({ ads: map, ads_post_ids: adsPostIds }, null, 2));
         const counts = [];
         for (const m of map.filter((x) => x.fb_story_id).slice(0, 10)) {
           try {
@@ -187,9 +198,19 @@ export const facebookChecks = {
             counts.push({ ad_id: m.ad_id, fb_story_id: m.fb_story_id, error: err.message });
           }
         }
-        const ev = { ads: map.length, with_fb_story: map.filter((m) => m.fb_story_id).length, with_ig_media: map.filter((m) => m.ig_media_id).length, dynamic_creative: map.filter((m) => m.dynamic_creative).length, comment_counts: counts };
+        const storyIds = new Set(map.map((m) => m.fb_story_id).filter(Boolean));
+        const ev = {
+          ads_posts: adsPosts[0]?.error ? adsPosts[0] : adsPostIds.length,
+          ads_posts_not_in_creatives: adsPostIds.filter((id) => !storyIds.has(id)).length,
+          ads: map.length,
+          with_fb_story: map.filter((m) => m.fb_story_id).length,
+          with_ig_media: map.filter((m) => m.ig_media_id).length,
+          dynamic_creative: map.filter((m) => m.dynamic_creative).length,
+          comment_counts: counts,
+        };
         if (!map.length) return result(STATUS.PENDING, '廣告帳號裡沒有廣告；需要至少一則廣告（可用極小預算）才能驗證', ev);
-        const note = ev.dynamic_creative ? `；其中 ${ev.dynamic_creative} 則是動態素材，可能對應多篇貼文，需另外確認` : '';
+        const note = (ev.dynamic_creative ? `；其中 ${ev.dynamic_creative} 則是動態素材，可能對應多篇貼文` : '')
+          + (ev.ads_posts_not_in_creatives ? `；ads_posts 多列出 ${ev.ads_posts_not_in_creatives} 篇 creative 查不到的廣告貼文，對應時兩條路都要用` : '');
         return result(STATUS.CONDITIONAL, `可從廣告查到對應貼文（${ev.with_fb_story}/${ev.ads}）並讀取留言；需要 ads_read 權限${note}。廣告留言是否會進 webhook，請看 webhook-stats`, ev);
       } catch (err) {
         return fromGraphError(err, '讀取廣告與對應貼文');

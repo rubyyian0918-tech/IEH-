@@ -29,7 +29,7 @@ export function loginUrl() {
   u.searchParams.set('client_id', config.appId);
   u.searchParams.set('redirect_uri', redirectUri());
   u.searchParams.set('state', state);
-  u.searchParams.set('scope', SCOPES.join(','));
+  u.searchParams.set('scope', [...SCOPES, ...config.extraScopes].join(','));
   return u.toString();
 }
 

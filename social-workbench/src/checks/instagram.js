@@ -118,7 +118,7 @@ export const instagramChecks = {
       const liked = attempts[0].ok;
       return result(
         liked ? STATUS.CAN : STATUS.CANNOT,
-        `${liked ? '按讚成功（與既有認知不同，請再確認）' : '按讚 API 不可用'}；封鎖用戶沒有公開 API，不實測，以官方文件為準`,
+        `${liked ? '按讚成功' : '按讚失敗（2026-04 起需 instagram_manage_engagement 權限，請在 META_EXTRA_SCOPES 加上後重新 /login 再試；端點以官方文件為準）'}；封鎖用戶沒有公開 API，不實測`,
         { attempts },
       );
     },
@@ -131,7 +131,7 @@ export const instagramChecks = {
       requireConfig('igUserId', 'pageId');
       const f = path.join(DATA_DIR, 'ad_map.json');
       if (!fs.existsSync(f)) return result(STATUS.PENDING, '還沒有廣告對應表；請先執行 fb-ads');
-      const map = JSON.parse(fs.readFileSync(f, 'utf8')).filter((m) => m.ig_media_id);
+      const map = JSON.parse(fs.readFileSync(f, 'utf8')).ads.filter((m) => m.ig_media_id);
       if (!map.length) return result(STATUS.PENDING, '廣告裡沒有 Instagram 版位的素材；請投放一則含 IG 版位的廣告');
       const token = pageToken();
       const store = new CommentStore();

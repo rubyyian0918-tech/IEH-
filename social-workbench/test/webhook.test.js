@@ -67,3 +67,24 @@ test('IG 留言事件轉成統一格式', () => {
   assert.equal(comments[0].author_name, 'amy');
   assert.equal(comments[0].is_brand, false);
 });
+
+test('FB 編輯事件用 sender_id 取代 from 時也能辨識作者', () => {
+  const { comments } = normalizeWebhook(fbEvent({
+    item: 'comment', verb: 'edited', comment_id: 'c3', post_id: '100_1', parent_id: 'c1',
+    sender_id: '100', sender_name: '粉專', message: '已修改',
+  }));
+  assert.equal(comments[0].author_id, '100');
+  assert.equal(comments[0].is_brand, true);
+  assert.equal(comments[0].verb, 'edited');
+});
+
+test('IG 廣告留言帶 ad_id', () => {
+  const { comments } = normalizeWebhook({
+    object: 'instagram',
+    entry: [{ id: '178', time: 1790000000, changes: [{ field: 'comments', value: {
+      id: 'ig2', text: '怎麼買', from: { id: '56', username: 'bob' },
+      media: { id: 'm2', media_product_type: 'FEED', ad_id: 'ad9', ad_title: '中秋廣告' },
+    } }] }],
+  });
+  assert.equal(comments[0].ad_id, 'ad9');
+});

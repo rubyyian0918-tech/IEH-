@@ -29,6 +29,21 @@ export class GraphError extends Error {
   }
 }
 
+// code 190 的子代碼 → 白話原因（依官方錯誤處理文件）
+export const TOKEN_SUBCODES = {
+  458: '使用者移除了 App',
+  459: '帳號被 Facebook 安全檢查鎖定',
+  460: '使用者變更了密碼',
+  463: 'token 已過期',
+  464: '使用者帳號未確認',
+  467: 'token 無效（例如已登出）',
+  492: '工作階段無效（常見於失去粉專管理角色）',
+};
+
+export function tokenInvalidReason(err) {
+  return TOKEN_SUBCODES[err?.subcode] || 'token 無效';
+}
+
 export function appSecretProof(token, secret = config.appSecret) {
   return crypto.createHmac('sha256', secret).update(token).digest('hex');
 }

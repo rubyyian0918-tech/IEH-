@@ -3,6 +3,7 @@
 這**不是**正式系統，是一支可以重複執行的小程式，用來確認 Meta 平台（Facebook 粉專＋Instagram）實際上能做什麼。
 每個驗證項目執行後會得到「可做／不可做／有條件／待實測」的結論，最後整理成一份報告。
 
+- **先讀這份**：初步結論與 MVP 範圍建議 [`docs/phase0-findings.md`](docs/phase0-findings.md)
 - 官方文件研究的總表：[`docs/capability-matrix.md`](docs/capability-matrix.md)
 - 實測結果：執行後產生在 `results/REPORT.md`
 
@@ -95,6 +96,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | 1 | 瀏覽器打開 `http://localhost:3000/login` | 用 Facebook 登入，勾選測試粉專與 IG。完成後把畫面上的粉專 ID、IG ID 填進 `.env` |
 | 2 | `npm run check -- pages` | 確認拿到 token、權限都有授予 |
 | 3 | `npm run check -- fb-subscribe` | 讓 App 訂閱粉專；接著用「顧客」帳號留言，伺服器視窗應在幾秒內出現「新留言」 |
+| 3b | 同上 | **最關鍵的一題**：再請一個「不是 App 角色成員」的朋友留言，看伺服器有沒有收到。開發模式下可能只收得到 App 角色成員的留言，這決定影子模式能不能在送審前就接真實客戶 |
 | 4 | `npm run check -- fb-read` | 讀取粉專貼文、主留言與回覆 |
 | 5 | 用**粉專身分在 FB App** 回覆一則留言，再執行 `npm run check -- fb-native-reply` | 確認系統能認出「品牌自己回的」 |
 | 6 | `npm run check -- ig-read` | 讀取 IG 貼文與 Reels 留言 |

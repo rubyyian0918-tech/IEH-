@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { config, requireConfig, DATA_DIR } from '../config.js';
-import { get } from '../meta/graph.js';
+import { get, tokenInvalidReason, TOKEN_SUBCODES } from '../meta/graph.js';
 import { grantedScopes } from '../meta/auth.js';
 import { loadTokens, readAll, CommentStore } from '../store.js';
 import { mask } from '../crypto.js';
@@ -59,9 +59,10 @@ export const commonChecks = {
             expires_at: d.expires_at ? new Date(d.expires_at * 1000).toISOString() : '不會過期',
             data_access_expires_at: d.data_access_expires_at ? new Date(d.data_access_expires_at * 1000).toISOString() : null,
             scopes: d.scopes, error: d.error || null,
+            reason: d.error?.subcode ? TOKEN_SUBCODES[d.error.subcode] || null : null,
           };
         } catch (err) {
-          return { label, is_valid: false, error: err.message, code: err.code };
+          return { label, is_valid: false, error: err.message, code: err.code, subcode: err.subcode, reason: err.isTokenInvalid ? tokenInvalidReason(err) : null };
         }
       };
       const checks = [await inspect('使用者 token', t.user.access_token)];
@@ -84,9 +85,9 @@ export const commonChecks = {
       const events = readAll('webhook_events.jsonl');
       if (!events.length) return result(STATUS.PENDING, '還沒收到任何 webhook 事件；確認伺服器有開、PUBLIC_BASE_URL 可從外部連到，並已執行 fb-subscribe');
       const adMapFile = path.join(DATA_DIR, 'ad_map.json');
-      const adMap = fs.existsSync(adMapFile) ? JSON.parse(fs.readFileSync(adMapFile, 'utf8')) : [];
-      const adFbPosts = new Set(adMap.map((m) => m.fb_story_id).filter(Boolean));
-      const adIgMedia = new Set(adMap.map((m) => m.ig_media_id).filter(Boolean));
+      const adMap = fs.existsSync(adMapFile) ? JSON.parse(fs.readFileSync(adMapFile, 'utf8')) : { ads: [], ads_post_ids: [] };
+      const adFbPosts = new Set([...adMap.ads.map((m) => m.fb_story_id), ...adMap.ads_post_ids].filter(Boolean));
+      const adIgMedia = new Set(adMap.ads.map((m) => m.ig_media_id).filter(Boolean));
       const store = new CommentStore();
       const fromWebhook = [...store.byKey.values()].filter((c) => c.raw?.field);
       const by = (platform) => {
@@ -101,7 +102,9 @@ export const commonChecks = {
         duplicates_seen: lat.filter((r) => r.duplicate).length,
         brand_events: lat.filter((r) => r.is_brand).length,
         fb_ad_comment_events: fromWebhook.filter((c) => c.platform === 'facebook' && adFbPosts.has(c.content_id)).length,
-        ig_ad_comment_events: fromWebhook.filter((c) => c.platform === 'instagram' && adIgMedia.has(c.content_id)).length,
+        // IG webhook 對廣告留言會直接帶 ad_id；另外也比對廣告對應表
+        ig_ad_comment_events: fromWebhook.filter((c) => c.platform === 'instagram' && (c.ad_id || adIgMedia.has(c.content_id))).length,
+        authors_seen: new Set(fromWebhook.filter((c) => !c.is_brand).map((c) => c.author_id)).size,
         rejected_bad_signature: readAll('webhook_rejected.jsonl').length,
       };
       return result(STATUS.CAN, `收到 ${ev.raw_events} 筆事件；FB 延遲中位數 ${ev.facebook.p50_seconds ?? '-'} 秒，IG ${ev.instagram.p50_seconds ?? '-'} 秒；廣告留言事件 FB ${ev.fb_ad_comment_events}、IG ${ev.ig_ad_comment_events}`, ev);

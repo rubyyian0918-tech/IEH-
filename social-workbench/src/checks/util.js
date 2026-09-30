@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { RESULTS_DIR, config } from '../config.js';
 import { loadTokens } from '../store.js';
-import { GraphError } from '../meta/graph.js';
+import { GraphError, tokenInvalidReason } from '../meta/graph.js';
 
 // 報告的三種結論 + 還沒有結論的狀態
 export const STATUS = {
@@ -40,7 +40,7 @@ export function userToken() {
 export function fromGraphError(err, what) {
   if (!(err instanceof GraphError)) return result(STATUS.ERROR, `${what}：${err.message}`);
   const ev = { code: err.code, subcode: err.subcode, message: err.message, fbtrace_id: err.fbtraceId };
-  if (err.isTokenInvalid) return result(STATUS.ERROR, `${what}：token 已失效（code 190），請重新 /login`, ev);
+  if (err.isTokenInvalid) return result(STATUS.ERROR, `${what}：token 已失效（${tokenInvalidReason(err)}，code 190/${err.subcode ?? '-'}），請重新 /login`, ev);
   if (err.isPermission) return result(STATUS.CONDITIONAL, `${what}：權限不足或需要審查（code ${err.code}）`, ev);
   if (err.isRateLimited) return result(STATUS.ERROR, `${what}：被限流（code ${err.code}），稍後再試`, ev);
   return result(STATUS.ERROR, `${what}：${err.message}`, ev);

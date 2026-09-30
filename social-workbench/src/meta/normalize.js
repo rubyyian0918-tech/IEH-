@@ -32,16 +32,18 @@ function fromFacebookChange(entry, change, receivedAt) {
   const pageId = String(entry.id);
   // 主留言的 parent_id 是貼文 ID；回覆的 parent_id 是上一層留言 ID
   const isTopLevel = !v.parent_id || v.parent_id === v.post_id;
+  // 部分事件（edited、hide 等）用 sender_id／sender_name 取代 from
+  const authorId = v.from?.id ?? v.sender_id ?? null;
   return {
     platform: 'facebook',
     account_id: pageId,
     platform_comment_id: v.comment_id,
     parent_comment_id: isTopLevel ? null : v.parent_id,
     content_id: v.post_id || null,
-    author_id: v.from?.id ?? null,
-    author_name: v.from?.name ?? null,
+    author_id: authorId,
+    author_name: v.from?.name ?? v.sender_name ?? null,
     text: v.message ?? null,
-    is_brand: v.from?.id != null && String(v.from.id) === pageId,
+    is_brand: authorId != null && String(authorId) === pageId,
     verb: v.verb || 'add',
     platform_created_at: toIso(v.created_time),
     received_at: receivedAt,
@@ -60,6 +62,9 @@ function fromInstagramChange(entry, change, receivedAt) {
     parent_comment_id: v.parent_id || null,
     content_id: v.media?.id || null,
     content_type: v.media?.media_product_type || null,
+    // 廣告或加強推廣貼文上的留言會帶 ad_id
+    ad_id: v.media?.ad_id || null,
+    original_media_id: v.media?.original_media_id || null,
     author_id: v.from?.id ?? null,
     author_name: v.from?.username ?? null,
     text: v.text ?? null,

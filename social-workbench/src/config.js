@@ -11,7 +11,8 @@ const env = (name, fallback = '') => (process.env[name] ?? fallback).trim();
 export const config = {
   appId: env('META_APP_ID'),
   appSecret: env('META_APP_SECRET'),
-  graphVersion: env('META_GRAPH_VERSION', 'v24.0'),
+  graphVersion: env('META_GRAPH_VERSION', 'v26.0'),
+  extraScopes: env('META_EXTRA_SCOPES').split(',').map((s) => s.trim()).filter(Boolean),
   verifyToken: env('WEBHOOK_VERIFY_TOKEN'),
   publicBaseUrl: env('PUBLIC_BASE_URL').replace(/\/$/, ''),
   port: Number(env('PORT', '3000')),
